@@ -130,6 +130,7 @@ model Game {
   oddsSnapshots OddsSnapshot[]
   userPicks     UserPick[]
   alerts        Alert[]
+  predictions   MLPrediction[]
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
@@ -304,4 +305,83 @@ model ResponsibleSettings {
   updatedAt               DateTime  @updatedAt
 
   @@index([cooldownUntil])
+}
+
+// ============================================================================
+// ML Model Registry
+// ============================================================================
+
+enum ModelType {
+  WIN_PROBABILITY
+  SPREAD
+  TOTAL
+}
+
+enum ModelStatus {
+  TRAINING
+  EVALUATING
+  ACTIVE
+  DEPRECATED
+  FAILED
+}
+
+model MLModel {
+  id              String       @id @default(cuid())
+  version         String       @unique // e.g., "v1.2.0" or "2024-12-24-001"
+  modelType       ModelType
+  status          ModelStatus  @default(TRAINING)
+  // Training metadata
+  trainedAt       DateTime     @default(now())
+  trainStartDate  DateTime?    // Start of training data range
+  trainEndDate    DateTime?    // End of training data range
+  // Features used
+  features        String[]     // List of feature names
+  // Performance metrics
+  logLoss         Float?       // Cross-entropy loss
+  brierScore      Float?       // Brier score (calibration)
+  accuracy        Float?       // For win probability
+  mae             Float?       // Mean absolute error (for spreads/totals)
+  calibrationPlot Json?        // Calibration curve data
+  // Model artifacts
+  modelPath       String?      // Path to saved model file
+  configPath      String?      // Path to model config
+  // Deployment
+  deployedAt      DateTime?
+  deprecatedAt    DateTime?
+  notes           String?
+  predictions     MLPrediction[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([modelType, status])
+  @@index([version])
+  @@index([trainedAt])
+}
+
+model MLPrediction {
+  id              String    @id @default(cuid())
+  modelId         String
+  model           MLModel   @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  gameId          String
+  game            Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  // Predictions
+  homeWinProb     Float?    // Home team win probability (0-1)
+  awayWinProb     Float?    // Away team win probability (0-1)
+  spreadPred      Float?    // Predicted spread (negative = home favored)
+  totalPred       Float?    // Predicted total points
+  // Confidence intervals
+  spreadLower     Float?    // Lower bound (80% CI)
+  spreadUpper     Float?    // Upper bound (80% CI)
+  totalLower      Float?
+  totalUpper      Float?
+  // Metadata
+  predictedAt     DateTime  @default(now())
+  gameStartTime   DateTime  // For time-based filtering
+  features        Json?     // Feature values used
+  createdAt       DateTime  @default(now())
+
+  @@unique([modelId, gameId])
+  @@index([gameId])
+  @@index([gameStartTime])
+  @@index([predictedAt])
 }

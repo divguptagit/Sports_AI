@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+
+# Data
+data/
+*.parquet
+*.csv
+*.h5
+*.pkl
+*.joblib
+
+# Models
+models/
+*.model
+*.ckpt
+*.pb
+
+# Logs
+logs/
+*.log
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# MLflow
+mlruns/
+
+# Plots
+plots/
+*.png
+*.pdf
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
