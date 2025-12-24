@@ -51,4 +51,3 @@ export interface ProviderResponse<T> {
   data: T;
   rateLimit?: RateLimitInfo;
 }
-

@@ -80,8 +80,7 @@ export const errors = {
   unauthorized: (message = "Unauthorized") =>
     new AppError(401, "UNAUTHORIZED", message),
 
-  forbidden: (message = "Forbidden") =>
-    new AppError(403, "FORBIDDEN", message),
+  forbidden: (message = "Forbidden") => new AppError(403, "FORBIDDEN", message),
 
   notFound: (resource = "Resource") =>
     new AppError(404, "NOT_FOUND", `${resource} not found`),
@@ -106,4 +105,3 @@ export const errors = {
       retryAfter,
     }),
 };
-

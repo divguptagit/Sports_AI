@@ -24,7 +24,7 @@ import { UpdateResponsibleSettingsSchema } from "@/lib/api/validation";
 export async function POST(request: NextRequest) {
   try {
     // Require authentication
-    const user = await requireAuth();
+    const user = await requireAuth() as any;
 
     // Check rate limit
     const rateLimit = checkRateLimit(
@@ -63,4 +63,3 @@ export async function POST(request: NextRequest) {
     return errorResponse(error);
   }
 }
-

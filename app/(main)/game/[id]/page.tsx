@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import AppLayout from "@/components/layout/AppLayout";
+// Layout is now in root layout.tsx
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import {
@@ -99,28 +99,24 @@ export default function GamePage() {
 
   if (loading) {
     return (
-      <AppLayout>
-        <div className="space-y-6">
-          <div className="h-8 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
-          <div className="h-64 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700" />
-          <TableSkeleton rows={3} cols={4} />
-        </div>
-      </AppLayout>
+      <div className="space-y-6">
+        <div className="h-8 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+        <div className="h-64 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700" />
+        <TableSkeleton rows={3} cols={4} />
+      </div>
     );
   }
 
   if (!game) {
     return (
-      <AppLayout>
-        <div className="text-center">
-          <h2 className="text-2xl font-bold">Game not found</h2>
-        </div>
-      </AppLayout>
+      <div className="text-center">
+        <h2 className="text-2xl font-bold">Game not found</h2>
+      </div>
     );
   }
 
   return (
-    <AppLayout>
+    <div className="space-y-6">
       <div className="space-y-6">
         {/* Back Button */}
         <Link
@@ -218,15 +214,23 @@ export default function GamePage() {
                       <TableHead>Bookmaker</TableHead>
                       {activeMarket === "MONEYLINE" && (
                         <>
-                          <TableHead align="right">{game.awayTeam.abbr}</TableHead>
-                          <TableHead align="right">{game.homeTeam.abbr}</TableHead>
+                          <TableHead align="right">
+                            {game.awayTeam.abbr}
+                          </TableHead>
+                          <TableHead align="right">
+                            {game.homeTeam.abbr}
+                          </TableHead>
                         </>
                       )}
                       {activeMarket === "SPREAD" && (
                         <>
                           <TableHead align="center">Line</TableHead>
-                          <TableHead align="right">{game.awayTeam.abbr}</TableHead>
-                          <TableHead align="right">{game.homeTeam.abbr}</TableHead>
+                          <TableHead align="right">
+                            {game.awayTeam.abbr}
+                          </TableHead>
+                          <TableHead align="right">
+                            {game.homeTeam.abbr}
+                          </TableHead>
                         </>
                       )}
                       {activeMarket === "TOTAL" && (
@@ -258,7 +262,9 @@ export default function GamePage() {
                         {activeMarket === "SPREAD" && (
                           <>
                             <TableCell align="center" className="font-mono">
-                              {bookmaker.line ? formatOdds(bookmaker.line) : "-"}
+                              {bookmaker.line
+                                ? formatOdds(bookmaker.line)
+                                : "-"}
                             </TableCell>
                             <TableCell align="right" className="font-mono">
                               {formatOdds(bookmaker.awayOdds)}
@@ -281,7 +287,10 @@ export default function GamePage() {
                             </TableCell>
                           </>
                         )}
-                        <TableCell align="right" className="text-sm text-gray-500">
+                        <TableCell
+                          align="right"
+                          className="text-sm text-gray-500"
+                        >
                           {new Date(bookmaker.timestamp).toLocaleTimeString()}
                         </TableCell>
                       </TableRow>
@@ -324,7 +333,7 @@ export default function GamePage() {
           market={activeMarket}
         />
       </div>
-    </AppLayout>
+    </div>
   );
 }
 
@@ -477,7 +486,7 @@ function CreatePickModal({
         )}
 
         <div className="flex gap-3">
-          <Button type="submit" isLoading={loading} className="flex-1">
+          <Button type="submit" loading={loading} className="flex-1">
             Create Pick
           </Button>
           <Button type="button" variant="outline" onClick={onClose}>
@@ -488,4 +497,3 @@ function CreatePickModal({
     </Modal>
   );
 }
-

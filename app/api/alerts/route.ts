@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     const user = await requireAuth();
 
     // Check rate limit (10 alerts per minute)
-    const rateLimit = checkRateLimit(`alerts:${user.id}`, rateLimits.standard);
+    const rateLimit = checkRateLimit(`alerts:${(user as any).id}`, rateLimits.standard);
     if (!rateLimit.allowed) {
       throw errors.rateLimit(rateLimit.retryAfter!);
     }
@@ -56,9 +56,7 @@ export async function POST(request: NextRequest) {
 
     // Validate alert type requirements
     if (data.type === "ODDS_MOVE" && !data.oddsThreshold) {
-      throw errors.badRequest(
-        "oddsThreshold is required for ODDS_MOVE alerts"
-      );
+      throw errors.badRequest("oddsThreshold is required for ODDS_MOVE alerts");
     }
 
     if (data.type === "GAME_START" && !data.minutesBefore) {
@@ -70,7 +68,7 @@ export async function POST(request: NextRequest) {
     // Create alert
     const alert = await prisma.alert.create({
       data: {
-        userId: user.id,
+        userId: (user as any).id,
         gameId: data.gameId,
         type: data.type,
         oddsThreshold: data.oddsThreshold,
@@ -97,11 +95,11 @@ export async function POST(request: NextRequest) {
           oddsThreshold: alert.oddsThreshold,
           minutesBefore: alert.minutesBefore,
           createdAt: alert.createdAt,
-          game: {
+          game: alert.game ? {
             homeTeam: alert.game.homeTeam.abbr,
             awayTeam: alert.game.awayTeam.abbr,
             startTime: alert.game.startTime,
-          },
+          } : null,
         },
       },
       { status: 201 }
@@ -110,4 +108,3 @@ export async function POST(request: NextRequest) {
     return errorResponse(error);
   }
 }
-

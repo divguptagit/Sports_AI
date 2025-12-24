@@ -5,97 +5,87 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   TrendingUp,
-  ListChecks,
-  BarChart3,
-  Calendar,
+  Target,
+  Bell,
   BookOpen,
-  X,
+  Settings,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface SidebarProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-const navigation = [
-  { name: "Slate", href: "/", icon: LayoutDashboard },
-  { name: "My Picks", href: "/picks", icon: ListChecks },
-  { name: "Alerts", href: "/alerts", icon: TrendingUp },
-  { name: "Learn", href: "/learn", icon: BookOpen },
-  { name: "Settings", href: "/settings", icon: Calendar },
+const navItems = [
+  {
+    title: "Slate",
+    href: "/",
+    icon: LayoutDashboard,
+  },
+  {
+    title: "Game",
+    href: "/game",
+    icon: BarChart3,
+    disabled: true, // Dynamic route
+  },
+  {
+    title: "Picks",
+    href: "/picks",
+    icon: Target,
+  },
+  {
+    title: "Alerts",
+    href: "/alerts",
+    icon: Bell,
+  },
+  {
+    title: "Learn",
+    href: "/learn",
+    icon: BookOpen,
+  },
+  {
+    title: "Settings",
+    href: "/settings",
+    icon: Settings,
+  },
 ];
 
-export default function Sidebar({ isOpen, onClose }: SidebarProps) {
+export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <>
-      {/* Mobile overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-          onClick={onClose}
-        />
-      )}
+    <aside className="hidden w-64 flex-col border-r bg-background md:flex">
+      <nav className="flex-1 space-y-1 p-4">
+        {navItems.map((item) => {
+          const isActive =
+            pathname === item.href || pathname.startsWith(item.href + "/");
+          const Icon = item.icon;
 
-      {/* Sidebar */}
-      <aside
-        className={cn(
-          "fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-64 border-r border-gray-200 bg-white transition-transform dark:border-gray-700 dark:bg-gray-900",
-          "lg:translate-x-0",
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
-        <div className="flex h-full flex-col">
-          {/* Close button for mobile */}
-          <div className="flex items-center justify-between border-b border-gray-200 p-4 dark:border-gray-700 lg:hidden">
-            <span className="text-lg font-semibold">Menu</span>
-            <button
-              onClick={onClose}
-              className="rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-800"
-              aria-label="Close menu"
+          return (
+            <Link
+              key={item.href}
+              href={item.disabled ? "#" : item.href}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                isActive
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                item.disabled && "pointer-events-none opacity-50"
+              )}
             >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
+              <Icon className="h-5 w-5" />
+              {item.title}
+            </Link>
+          );
+        })}
+      </nav>
 
-          {/* Navigation */}
-          <nav className="flex-1 space-y-1 overflow-y-auto p-4">
-            {navigation.map((item) => {
-              const isActive = pathname === item.href;
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  onClick={onClose}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
-                      : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
-                  )}
-                >
-                  <Icon className="h-5 w-5" />
-                  {item.name}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Footer */}
-          <div className="border-t border-gray-200 p-4 dark:border-gray-700">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Sports AI v0.1.0
-            </p>
-            <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-              Analytics Only - No Real Betting
-            </p>
-          </div>
+      {/* Footer */}
+      <div className="border-t p-4">
+        <div className="rounded-lg bg-muted p-3 text-xs">
+          <p className="mb-1 font-semibold">Analytics Only</p>
+          <p className="text-muted-foreground">
+            For educational purposes. Not betting advice.
+          </p>
         </div>
-      </aside>
-    </>
+      </div>
+    </aside>
   );
 }
-

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import AppLayout from "@/components/layout/AppLayout";
+// Layout is now in root layout.tsx
 import { Button } from "@/components/ui/Button";
 import { Shield, Clock, Bell, CheckCircle } from "lucide-react";
 
@@ -75,7 +75,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <AppLayout>
+    <div className="space-y-6">
       <div className="space-y-6">
         {/* Header */}
         <div>
@@ -141,7 +141,7 @@ export default function SettingsPage() {
                 </label>
               </div>
 
-              <Button type="submit" isLoading={verifying}>
+              <Button type="submit" loading={verifying}>
                 Verify Age
               </Button>
             </form>
@@ -250,7 +250,6 @@ export default function SettingsPage() {
           </p>
         </div>
       </div>
-    </AppLayout>
+    </div>
   );
 }
-

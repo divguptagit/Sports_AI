@@ -89,4 +89,3 @@ export function normalizeMarketType(market: string): MarketType | null {
 
   return null;
 }
-

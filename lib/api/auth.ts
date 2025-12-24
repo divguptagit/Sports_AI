@@ -70,4 +70,3 @@ export async function requirePickAccess(userId: string) {
   await requireAgeVerification(userId);
   await checkCooldown(userId);
 }
-

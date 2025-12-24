@@ -11,12 +11,7 @@ interface TableProps {
 export function Table({ children, className }: TableProps) {
   return (
     <div className="w-full overflow-x-auto">
-      <table
-        className={cn(
-          "w-full border-collapse text-sm",
-          className
-        )}
-      >
+      <table className={cn("w-full border-collapse text-sm", className)}>
         {children}
       </table>
     </div>
@@ -59,7 +54,11 @@ interface TableCellProps {
   align?: "left" | "center" | "right";
 }
 
-export function TableHead({ children, className, align = "left" }: TableCellProps) {
+export function TableHead({
+  children,
+  className,
+  align = "left",
+}: TableCellProps) {
   return (
     <th
       className={cn(
@@ -74,7 +73,11 @@ export function TableHead({ children, className, align = "left" }: TableCellProp
   );
 }
 
-export function TableCell({ children, className, align = "left" }: TableCellProps) {
+export function TableCell({
+  children,
+  className,
+  align = "left",
+}: TableCellProps) {
   return (
     <td
       className={cn(
@@ -116,7 +119,13 @@ export function TableSkeleton({ rows = 5, cols = 5 }) {
   );
 }
 
-export function EmptyState({ title, description }: { title: string; description: string }) {
+export function EmptyState({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
   return (
     <div className="flex min-h-[400px] flex-col items-center justify-center rounded-lg border border-gray-200 bg-white p-12 text-center dark:border-gray-700 dark:bg-gray-900">
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -128,4 +137,3 @@ export function EmptyState({ title, description }: { title: string; description:
     </div>
   );
 }
-

@@ -1,6 +1,6 @@
 /**
  * Odds Conversion and Analytics Utilities
- * 
+ *
  * These utilities are for analytics purposes only.
  * NOT betting advice or recommendations.
  */
@@ -56,12 +56,12 @@ export function americanToDecimal(odds: number): number {
 
 /**
  * Remove vig (vigorish) from two-way market odds to get fair probabilities
- * 
+ *
  * In two-way markets (moneyline, totals), bookmakers add "vig" or "juice"
  * which makes the sum of implied probabilities > 1.0
- * 
+ *
  * This normalizes the probabilities to sum to 1.0
- * 
+ *
  * @param homeOdds Home/favorite odds
  * @param awayOdds Away/underdog odds
  * @returns Normalized probabilities
@@ -85,14 +85,14 @@ export function removeVig(
 
 /**
  * Calculate betting edge
- * 
+ *
  * Edge = Model Probability - Implied Probability
- * 
+ *
  * Positive edge suggests value (model thinks probability is higher than market)
  * Negative edge suggests poor value
- * 
+ *
  * NOTE: This is for analytics only, not betting advice
- * 
+ *
  * @param modelProb Your model's estimated probability
  * @param marketOdds Market odds (American format)
  * @returns Edge as a percentage
@@ -104,11 +104,11 @@ export function calculateEdge(modelProb: number, marketOdds: number): number {
 
 /**
  * Calculate expected value (EV)
- * 
+ *
  * EV = (Win Probability × Profit) - (Loss Probability × Stake)
- * 
+ *
  * NOTE: This is for analytics only, not betting advice
- * 
+ *
  * @param modelProb Your model's estimated probability
  * @param odds American odds
  * @param stake Bet amount (default 1 unit)
@@ -128,7 +128,7 @@ export function calculateEV(
 
 /**
  * Confidence tier based on edge magnitude and data quality
- * 
+ *
  * @param edge Edge percentage
  * @param dataFreshness Minutes since last update
  * @returns Confidence tier
@@ -168,4 +168,3 @@ export function formatOdds(odds: number): string {
 export function formatProbability(prob: number, decimals: number = 1): string {
   return `${(prob * 100).toFixed(decimals)}%`;
 }
-

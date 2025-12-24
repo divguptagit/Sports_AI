@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import AppLayout from "@/components/layout/AppLayout";
+// Layout is now in root layout.tsx
 import {
   Table,
   TableHeader,
@@ -67,7 +67,10 @@ export default function PicksPage() {
     const totalUnits = picks.reduce((sum, p) => sum + p.units, 0);
     const profitUnits = picks.reduce((sum, p) => {
       if (p.result === "WIN") {
-        const payout = p.odds > 0 ? (p.odds / 100) * p.units : (100 / Math.abs(p.odds)) * p.units;
+        const payout =
+          p.odds > 0
+            ? (p.odds / 100) * p.units
+            : (100 / Math.abs(p.odds)) * p.units;
         return sum + payout;
       }
       if (p.result === "LOSS") return sum - p.units;
@@ -96,7 +99,7 @@ export default function PicksPage() {
   }
 
   return (
-    <AppLayout>
+    <div className="space-y-6">
       <div className="space-y-6">
         {/* Header */}
         <div>
@@ -266,7 +269,6 @@ export default function PicksPage() {
           </div>
         )}
       </div>
-    </AppLayout>
+    </div>
   );
 }
-

@@ -1,11 +1,11 @@
 "use client";
 
-import AppLayout from "@/components/layout/AppLayout";
+// Layout is now in root layout.tsx
 import { BookOpen, TrendingUp, Shield, AlertTriangle } from "lucide-react";
 
 export default function LearnPage() {
   return (
-    <AppLayout>
+    <div className="space-y-6">
       <div className="space-y-6">
         {/* Header */}
         <div>
@@ -132,11 +132,17 @@ export default function LearnPage() {
           </div>
         </div>
       </div>
-    </AppLayout>
+    </div>
   );
 }
 
-function GlossaryItem({ term, definition }: { term: string; definition: string }) {
+function GlossaryItem({
+  term,
+  definition,
+}: {
+  term: string;
+  definition: string;
+}) {
   return (
     <div className="border-b border-gray-200 pb-4 last:border-0 dark:border-gray-700">
       <dt className="font-semibold text-gray-900 dark:text-white">{term}</dt>
@@ -144,4 +150,3 @@ function GlossaryItem({ term, definition }: { term: string; definition: string }
     </div>
   );
 }
-

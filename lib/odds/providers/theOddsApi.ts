@@ -341,4 +341,3 @@ export class TheOddsApiProvider implements OddsProvider {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
-

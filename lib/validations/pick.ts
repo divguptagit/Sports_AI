@@ -24,4 +24,3 @@ export const CreatePickSchema = PickSchema.omit({
 });
 
 export type CreatePick = z.infer<typeof CreatePickSchema>;
-

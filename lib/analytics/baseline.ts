@@ -1,12 +1,12 @@
 /**
  * Baseline Prediction Model
- * 
+ *
  * This is a market-derived baseline that normalizes bookmaker odds
  * to create a "fair" probability estimate by removing the vig.
- * 
+ *
  * IMPORTANT: This is NOT betting advice or predictions.
  * This is for analytical purposes only to establish a baseline.
- * 
+ *
  * The baseline assumes the market is efficient and uses the wisdom
  * of the crowd (aggregated bookmaker odds) as the probability estimate.
  */
@@ -37,16 +37,17 @@ export interface TwoWayMarketOdds {
 
 /**
  * Generate baseline prediction for a two-way market
- * 
+ *
  * Uses normalized market probabilities (with vig removed) as the model.
  * This creates a "fair" baseline assuming the market is efficient.
- * 
+ *
  * @param odds Market odds for both sides
  * @returns Predictions for both sides
  */
-export function generateBaselinePrediction(
-  odds: TwoWayMarketOdds
-): { home: BaselinePrediction; away: BaselinePrediction } {
+export function generateBaselinePrediction(odds: TwoWayMarketOdds): {
+  home: BaselinePrediction;
+  away: BaselinePrediction;
+} {
   const { homeProb, awayProb, vig } = removeVig(odds.homeOdds, odds.awayOdds);
 
   const dataFreshness = (Date.now() - odds.timestamp.getTime()) / 1000 / 60;
@@ -83,9 +84,9 @@ export function generateBaselinePrediction(
 
 /**
  * Find best odds across multiple bookmakers
- * 
+ *
  * For analytics: identifies the most favorable odds available
- * 
+ *
  * @param bookmakers Array of bookmaker odds
  * @returns Best odds for each side
  */
@@ -125,9 +126,9 @@ export function findBestOdds(
 
 /**
  * Calculate consensus probability from multiple bookmakers
- * 
+ *
  * Takes the average of normalized probabilities across bookmakers
- * 
+ *
  * @param bookmakers Array of bookmaker odds
  * @returns Consensus probabilities
  */
@@ -155,4 +156,3 @@ export function calculateConsensus(
     avgVig: totalVig / bookmakers.length,
   };
 }
-

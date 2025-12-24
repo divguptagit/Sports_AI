@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import AppLayout from "@/components/layout/AppLayout";
+// Layout is now in root layout.tsx
 import { Button } from "@/components/ui/Button";
 import { Plus, Bell, Clock } from "lucide-react";
 
 export default function AlertsPage() {
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [_showCreateForm, _setShowCreateForm] = useState(false);
 
   return (
-    <AppLayout>
+    <div className="space-y-6">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -21,7 +21,7 @@ export default function AlertsPage() {
               Get notified about odds movements and game start times
             </p>
           </div>
-          <Button onClick={() => setShowCreateForm(true)}>
+          <Button onClick={() => _setShowCreateForm(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Create Alert
           </Button>
@@ -69,7 +69,6 @@ export default function AlertsPage() {
           </p>
         </div>
       </div>
-    </AppLayout>
+    </div>
   );
 }
-

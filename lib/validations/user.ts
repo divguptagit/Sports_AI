@@ -15,4 +15,3 @@ export const UpdateProfileSchema = z.object({
 });
 
 export type UpdateProfile = z.infer<typeof UpdateProfileSchema>;
-

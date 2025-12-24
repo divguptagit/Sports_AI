@@ -28,8 +28,9 @@ import { errorResponse, errors } from "@/lib/api/errors";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params;
   try {
     const game = await prisma.game.findUnique({
       where: { id: params.id },
@@ -79,4 +80,3 @@ export async function GET(
     return errorResponse(error);
   }
 }
-

@@ -13,7 +13,14 @@ export const PaginationSchema = z.object({
 
 export const DateSchema = z.coerce.date();
 
-export const LeagueSchema = z.enum(["NFL", "NBA", "MLB", "NHL", "NCAAF", "NCAAB"]);
+export const LeagueSchema = z.enum([
+  "NFL",
+  "NBA",
+  "MLB",
+  "NHL",
+  "NCAAF",
+  "NCAAB",
+]);
 
 export const MarketTypeSchema = z.enum(["MONEYLINE", "SPREAD", "TOTAL"]);
 
@@ -93,4 +100,3 @@ export const UpdateResponsibleSettingsSchema = z.object({
   enableBreakReminders: z.boolean().optional(),
   breakReminderInterval: z.number().int().min(15).max(120).optional(),
 });
-

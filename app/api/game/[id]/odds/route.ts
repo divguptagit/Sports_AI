@@ -43,8 +43,9 @@ import { GetGameOddsQuerySchema } from "@/lib/api/validation";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params;
   try {
     // Require authentication and age verification
     const user = await requireAuth();
@@ -120,16 +121,20 @@ export async function GET(
       });
     }
 
-    const markets = Array.from(marketMap.entries()).map(([type, bookmakers]) => ({
-      type,
-      bookmakers,
-    }));
+    const markets = Array.from(marketMap.entries()).map(
+      ([type, bookmakers]) => ({
+        type,
+        bookmakers,
+      })
+    );
 
     const lastUpdate =
       latestOdds.length > 0
-        ? latestOdds.reduce((latest, odds) =>
-            odds.timestamp > latest ? odds.timestamp : latest
-          , latestOdds[0].timestamp)
+        ? latestOdds.reduce(
+            (latest, odds) =>
+              odds.timestamp > latest ? odds.timestamp : latest,
+            latestOdds[0].timestamp
+          )
         : null;
 
     return NextResponse.json({
@@ -141,4 +146,3 @@ export async function GET(
     return errorResponse(error);
   }
 }
-

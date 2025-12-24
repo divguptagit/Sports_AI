@@ -4,9 +4,10 @@ import { ReactNode, ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  children: ReactNode;
-  variant?: "primary" | "secondary" | "outline" | "danger";
-  size?: "sm" | "md" | "lg";
+  children?: ReactNode;
+  variant?: "primary" | "secondary" | "outline" | "danger" | "default" | "destructive" | "ghost" | "link";
+  size?: "sm" | "md" | "lg" | "icon" | "default";
+  loading?: boolean;
   isLoading?: boolean;
 }
 
@@ -14,40 +15,49 @@ export function Button({
   children,
   variant = "primary",
   size = "md",
+  loading = false,
   isLoading = false,
   className,
   disabled,
   ...props
 }: ButtonProps) {
+  // Map new variants to old ones for compatibility
+  const mappedVariant = variant === "default" ? "primary" : variant === "destructive" ? "danger" : variant;
+  const isButtonLoading = loading || isLoading;
+  
   const variantClasses = {
     primary:
-      "bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-300 dark:bg-blue-500 dark:hover:bg-blue-600",
+      "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow",
     secondary:
-      "bg-gray-200 text-gray-900 hover:bg-gray-300 disabled:bg-gray-100 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600",
+      "bg-secondary text-secondary-foreground hover:bg-secondary/80",
     outline:
-      "border-2 border-gray-300 text-gray-700 hover:bg-gray-50 disabled:border-gray-200 disabled:text-gray-400 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800",
+      "border-2 border-input text-foreground hover:bg-accent hover:text-accent-foreground",
     danger:
-      "bg-red-600 text-white hover:bg-red-700 disabled:bg-red-300 dark:bg-red-500 dark:hover:bg-red-600",
+      "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm hover:shadow",
+    ghost: "hover:bg-accent hover:text-accent-foreground",
+    link: "underline-offset-4 hover:underline text-primary",
   };
 
+  const mappedSize = size === "default" ? "md" : size;
   const sizeClasses = {
-    sm: "px-3 py-1.5 text-sm",
-    md: "px-4 py-2 text-base",
-    lg: "px-6 py-3 text-lg",
+    sm: "px-3 py-1.5 text-sm h-9",
+    md: "px-4 py-2 text-base h-10",
+    lg: "px-6 py-3 text-lg h-11",
+    icon: "h-10 w-10 p-0",
   };
 
   return (
     <button
       className={cn(
-        "rounded-lg font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-        variantClasses[variant],
-        sizeClasses[size],
+        "rounded-lg font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 inline-flex items-center justify-center",
+        variantClasses[mappedVariant as keyof typeof variantClasses] || variantClasses.primary,
+        sizeClasses[mappedSize as keyof typeof sizeClasses],
         className
       )}
-      disabled={disabled || isLoading}
+      disabled={disabled || isButtonLoading}
       {...props}
     >
-      {isLoading ? (
+      {isButtonLoading ? (
         <span className="flex items-center gap-2">
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
           Loading...
@@ -58,4 +68,3 @@ export function Button({
     </button>
   );
 }
-

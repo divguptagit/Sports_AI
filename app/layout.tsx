@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { TopBar } from "@/components/layout/TopBar";
+import { Sidebar } from "@/components/layout/Sidebar";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "Sports AI - Analytics & Pick Tracking",
+  title: "Sports AI - NFL & NBA Analytics",
   description:
-    "Desktop-first sports analytics and simulated pick tracking platform",
+    "Desktop-first analytics and simulated pick tracking for NFL and NBA",
 };
 
 export default function RootLayout({
@@ -13,9 +19,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="antialiased">{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.variable}>
+        <ThemeProvider defaultTheme="system">
+          <div className="relative flex min-h-screen flex-col">
+            <TopBar />
+            <div className="flex flex-1">
+              <Sidebar />
+              <main className="flex-1 overflow-y-auto">
+                <div className="container mx-auto max-w-7xl p-6 lg:p-8">
+                  {children}
+                </div>
+              </main>
+            </div>
+          </div>
+        </ThemeProvider>
+      </body>
     </html>
   );
 }
-

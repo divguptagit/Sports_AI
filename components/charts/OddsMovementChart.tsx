@@ -378,7 +378,7 @@ export default function OddsMovementChart({
                   cy={pt.y}
                   r="4"
                   fill={pt.color}
-                  className="cursor-pointer transition-all hover:r-6"
+                  className="hover:r-6 cursor-pointer transition-all"
                   onMouseEnter={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
                     setHoveredPoint({
@@ -526,4 +526,3 @@ export default function OddsMovementChart({
     </div>
   );
 }
-
