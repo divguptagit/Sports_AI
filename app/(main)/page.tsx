@@ -1,19 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
-// Layout is now in root layout.tsx
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { SlateFilters } from "@/components/slate/SlateFilters";
+import { GameRow } from "@/components/slate/GameRow";
+import { SectionHeader } from "@/components/ui/SectionHeader";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { GameCardSkeleton } from "@/components/ui/LoadingSkeleton";
 import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-  TableSkeleton,
-  EmptyState,
-} from "@/components/ui/Table";
-import { Calendar, TrendingUp } from "lucide-react";
-import Link from "next/link";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/Dialog";
+import { Button } from "@/components/ui/Button";
+import { Calendar, AlertCircle, Target } from "lucide-react";
 
 interface Game {
   id: string;
@@ -23,188 +25,314 @@ interface Game {
   startTime: string;
   status: string;
   venue: string;
+  bestLine?: {
+    market: string;
+    home: number;
+    away: number;
+    movement: "up" | "down" | "none";
+    movementAmount?: number;
+  };
+  odds?: Array<{
+    bookmaker: string;
+    homeOdds: number;
+    awayOdds: number;
+    spread?: number;
+    total?: number;
+  }>;
 }
 
 export default function SlatePage() {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Filters
   const [selectedLeague, setSelectedLeague] = useState<string>("all");
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split("T")[0]
   );
+  const [selectedMarket, setSelectedMarket] = useState<
+    "ML" | "SPREAD" | "TOTAL"
+  >("ML");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [liveOnly, setLiveOnly] = useState(false);
 
+  // Create Pick Modal
+  const [createPickModalOpen, setCreatePickModalOpen] = useState(false);
+  const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+
+  // Fetch games
   useEffect(() => {
     fetchGames();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedLeague, selectedDate]);
 
-  async function fetchGames() {
+  const fetchGames = async () => {
     setLoading(true);
+    setError(null);
     try {
       const params = new URLSearchParams();
       if (selectedLeague !== "all") params.set("league", selectedLeague);
       params.set("date", selectedDate);
 
       const response = await fetch(`/api/slate?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch games");
+      }
       const data = await response.json();
-      setGames(data.games || []);
-    } catch (error) {
-      console.error("Failed to fetch games:", error);
+
+      // Mock best line data for demonstration
+      const gamesWithMockData = (data.games || []).map((game: Game) => ({
+        ...game,
+        bestLine: {
+          market: selectedMarket,
+          home: -110,
+          away: -110,
+          movement: Math.random() > 0.5 ? "up" : "down",
+          movementAmount: Math.floor(Math.random() * 10),
+        },
+        odds: [
+          {
+            bookmaker: "DraftKings",
+            homeOdds: -110,
+            awayOdds: -110,
+            spread: -3.5,
+            total: 47.5,
+          },
+          {
+            bookmaker: "FanDuel",
+            homeOdds: -105,
+            awayOdds: -115,
+            spread: -3,
+            total: 48,
+          },
+          {
+            bookmaker: "BetMGM",
+            homeOdds: -112,
+            awayOdds: -108,
+            spread: -3.5,
+            total: 47,
+          },
+        ],
+      }));
+
+      setGames(gamesWithMockData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch games");
     } finally {
       setLoading(false);
     }
-  }
+  };
 
-  function formatTime(dateString: string) {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
-  }
+  // Memoized filtered games
+  const filteredGames = useMemo(() => {
+    let filtered = games;
+
+    // Filter by live status
+    if (liveOnly) {
+      filtered = filtered.filter((game) => game.status === "IN_PROGRESS");
+    }
+
+    // Filter by search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (game) =>
+          game.homeTeam.name.toLowerCase().includes(query) ||
+          game.homeTeam.abbr.toLowerCase().includes(query) ||
+          game.awayTeam.name.toLowerCase().includes(query) ||
+          game.awayTeam.abbr.toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
+  }, [games, liveOnly, searchQuery]);
+
+  // Memoized handlers
+  const handleCreatePick = useCallback((gameId: string) => {
+    setSelectedGameId(gameId);
+    setCreatePickModalOpen(true);
+  }, []);
+
+  const handleCreatePickSubmit = useCallback(() => {
+    // TODO: Implement pick creation logic
+    console.log("Creating pick for game:", selectedGameId);
+    setCreatePickModalOpen(false);
+    setSelectedGameId(null);
+  }, [selectedGameId]);
+
+  // Stats
+  const stats = useMemo(() => {
+    const liveCount = filteredGames.filter(
+      (g) => g.status === "IN_PROGRESS"
+    ).length;
+    const upcomingCount = filteredGames.filter(
+      (g) => g.status === "SCHEDULED"
+    ).length;
+
+    return {
+      total: filteredGames.length,
+      live: liveCount,
+      upcoming: upcomingCount,
+    };
+  }, [filteredGames]);
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Today&apos;s Slate
-        </h1>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">
-          View upcoming games and compare odds across bookmakers
-        </p>
-      </div>
+      <SectionHeader
+        title="Today's Slate"
+        description="Premium odds comparison and simulated pick tracking"
+      />
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-        {/* League Filter */}
-        <div className="min-w-[200px] flex-1">
-          <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            League
-          </label>
-          <select
-            value={selectedLeague}
-            onChange={(e) => setSelectedLeague(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-          >
-            <option value="all">All Leagues</option>
-            <option value="NFL">NFL</option>
-            <option value="NBA">NBA</option>
-            <option value="MLB">MLB</option>
-            <option value="NHL">NHL</option>
-            <option value="NCAAF">NCAAF</option>
-            <option value="NCAAB">NCAAB</option>
-          </select>
+      <SlateFilters
+        selectedLeague={selectedLeague}
+        onLeagueChange={setSelectedLeague}
+        selectedDate={selectedDate}
+        onDateChange={setSelectedDate}
+        selectedMarket={selectedMarket}
+        onMarketChange={setSelectedMarket}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        liveOnly={liveOnly}
+        onLiveOnlyChange={setLiveOnly}
+      />
+
+      {/* Stats Bar */}
+      {!loading && filteredGames.length > 0 && (
+        <div className="flex items-center gap-4 rounded-lg border bg-muted/50 px-6 py-3 text-sm">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">{stats.total}</span>
+            <span className="text-muted-foreground">games</span>
+          </div>
+          {stats.live > 0 && (
+            <>
+              <div className="h-4 w-px bg-border" />
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-success">{stats.live}</span>
+                <span className="text-muted-foreground">live</span>
+              </div>
+            </>
+          )}
+          <div className="h-4 w-px bg-border" />
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">{stats.upcoming}</span>
+            <span className="text-muted-foreground">upcoming</span>
+          </div>
+          <div className="ml-auto text-xs text-muted-foreground">
+            Showing{" "}
+            {selectedMarket === "ML"
+              ? "Moneyline"
+              : selectedMarket === "SPREAD"
+                ? "Spread"
+                : "Total"}{" "}
+            odds
+          </div>
+        </div>
+      )}
+
+      {/* Games Table */}
+      <div className="rounded-lg border bg-card shadow-sm">
+        {/* Table Header */}
+        <div className="grid grid-cols-12 items-center gap-4 border-b bg-muted/50 px-6 py-3 text-sm font-medium">
+          <div className="col-span-1">Time</div>
+          <div className="col-span-4">Matchup</div>
+          <div className="col-span-3">Best Line</div>
+          <div className="col-span-3">Actions</div>
+          <div className="col-span-1"></div>
         </div>
 
-        {/* Date Filter */}
-        <div className="min-w-[200px] flex-1">
-          <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Date
-          </label>
-          <div className="relative">
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-            />
-            <Calendar className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-          </div>
+        {/* Table Body */}
+        <div>
+          {loading ? (
+            <div className="p-6">
+              <GameCardSkeleton count={5} />
+            </div>
+          ) : error ? (
+            <div className="p-12">
+              <EmptyState
+                icon={AlertCircle}
+                title="Error loading games"
+                message={error}
+                action={{
+                  label: "Try Again",
+                  onClick: fetchGames,
+                }}
+              />
+            </div>
+          ) : filteredGames.length === 0 ? (
+            <div className="p-12">
+              <EmptyState
+                icon={Calendar}
+                title="No games found"
+                message={
+                  searchQuery
+                    ? `No games match "${searchQuery}"`
+                    : liveOnly
+                      ? "No live games at the moment"
+                      : "No games scheduled for this date"
+                }
+                action={
+                  searchQuery || liveOnly
+                    ? {
+                        label: "Clear Filters",
+                        onClick: () => {
+                          setSearchQuery("");
+                          setLiveOnly(false);
+                        },
+                      }
+                    : undefined
+                }
+              />
+            </div>
+          ) : (
+            filteredGames.map((game) => (
+              <GameRow
+                key={game.id}
+                game={game}
+                market={selectedMarket}
+                onCreatePick={handleCreatePick}
+              />
+            ))
+          )}
         </div>
       </div>
 
-      {/* Games Table */}
-      {loading ? (
-        <TableSkeleton rows={5} cols={6} />
-      ) : games.length === 0 ? (
-        <EmptyState
-          title="No games found"
-          description="There are no games scheduled for the selected date and league."
-        />
-      ) : (
-        <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Time</TableHead>
-                <TableHead>League</TableHead>
-                <TableHead>Matchup</TableHead>
-                <TableHead>Venue</TableHead>
-                <TableHead align="center">Status</TableHead>
-                <TableHead align="right">Best Line</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {games.map((game) => (
-                <TableRow key={game.id} className="cursor-pointer">
-                  <TableCell className="font-medium">
-                    {formatTime(game.startTime)}
-                  </TableCell>
-                  <TableCell>
-                    <span className="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                      {game.league}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Link
-                      href={`/game/${game.id}`}
-                      className="hover:text-blue-600 dark:hover:text-blue-400"
-                    >
-                      <div className="font-medium">
-                        {game.awayTeam.abbr} @ {game.homeTeam.abbr}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        {game.awayTeam.name} at {game.homeTeam.name}
-                      </div>
-                    </Link>
-                  </TableCell>
-                  <TableCell className="text-sm text-gray-600 dark:text-gray-400">
-                    {game.venue || "TBD"}
-                  </TableCell>
-                  <TableCell align="center">
-                    <span
-                      className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                        game.status === "SCHEDULED"
-                          ? "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
-                          : game.status === "IN_PROGRESS"
-                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                            : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
-                      }`}
-                    >
-                      {game.status.replace("_", " ")}
-                    </span>
-                  </TableCell>
-                  <TableCell align="right">
-                    <Link
-                      href={`/game/${game.id}`}
-                      className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-                    >
-                      <TrendingUp className="h-4 w-4" />
-                      View Odds
-                    </Link>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+      {/* Create Pick Modal */}
+      <Dialog open={createPickModalOpen} onOpenChange={setCreatePickModalOpen}>
+        <DialogContent onClose={() => setCreatePickModalOpen(false)}>
+          <DialogHeader>
+            <DialogTitle>Track Simulated Pick</DialogTitle>
+            <DialogDescription>
+              Record your analytical prediction for tracking purposes only. This
+              is not real money betting.
+            </DialogDescription>
+          </DialogHeader>
 
-      {/* Stats */}
-      {!loading && games.length > 0 && (
-        <div className="rounded-lg border border-gray-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
-          <p className="text-sm text-blue-900 dark:text-blue-100">
-            Showing {games.length} game{games.length !== 1 ? "s" : ""} for{" "}
-            {new Date(selectedDate).toLocaleDateString("en-US", {
-              weekday: "long",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
-        </div>
-      )}
+          <div className="space-y-4 py-4">
+            <div className="rounded-lg border bg-muted/50 p-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Target className="h-4 w-4" />
+                <span>
+                  Pick tracking feature coming soon. This will allow you to
+                  record your predictions for analysis.
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setCreatePickModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleCreatePickSubmit}>Track Pick</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
