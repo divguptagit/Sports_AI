@@ -1,26 +1,16 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
+import { useState, useEffect } from "react";
+import { formatOdds } from "@/lib/analytics/odds";
 
 interface OddsDataPoint {
   timestamp: string;
+  homeOdds?: number;
+  awayOdds?: number;
+  overOdds?: number;
+  underOdds?: number;
+  line?: number;
   bookmaker: string;
-  market: string;
-  homeOdds: number | null;
-  awayOdds: number | null;
-  overOdds: number | null;
-  underOdds: number | null;
-  line: number | null;
 }
 
 interface OddsMovementChartProps {
@@ -30,41 +20,56 @@ interface OddsMovementChartProps {
 }
 
 type MarketType = "MONEYLINE" | "SPREAD" | "TOTAL";
-type ViewMode = "bookmaker" | "best";
 
 export default function OddsMovementChart({
   gameId,
   homeTeam,
   awayTeam,
 }: OddsMovementChartProps) {
-  const [oddsHistory, setOddsHistory] = useState<OddsDataPoint[]>([]);
+  const [data, setData] = useState<OddsDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedMarket, setSelectedMarket] = useState<MarketType>("SPREAD");
-  const [selectedBookmaker, setSelectedBookmaker] = useState<string>("all");
-  const [viewMode, setViewMode] = useState<ViewMode>("best");
-  const [hours, setHours] = useState(24);
+  const [market, setMarket] = useState<MarketType>("SPREAD");
+  const [bookmaker, setBookmaker] = useState<string>("best");
+  const [bookmakers, setBookmakers] = useState<string[]>([]);
+  const [hoveredPoint, setHoveredPoint] = useState<{
+    index: number;
+    x: number;
+    y: number;
+  } | null>(null);
 
   useEffect(() => {
     fetchOddsHistory();
-  }, [gameId, selectedMarket, selectedBookmaker, hours]);
+  }, [gameId, market, bookmaker]);
 
   async function fetchOddsHistory() {
     setLoading(true);
     try {
       const params = new URLSearchParams({
-        market: selectedMarket,
-        hours: hours.toString(),
+        market,
+        hours: "48",
       });
 
-      if (selectedBookmaker !== "all") {
-        params.set("bookmaker", selectedBookmaker);
+      if (bookmaker !== "best") {
+        params.set("bookmaker", bookmaker);
       }
 
       const response = await fetch(
         `/api/game/${gameId}/odds/history?${params.toString()}`
       );
-      const data = await response.json();
-      setOddsHistory(data.history || []);
+
+      if (response.status === 403) {
+        setData([]);
+        return;
+      }
+
+      const result = await response.json();
+      setData(result.history || []);
+
+      // Extract unique bookmakers
+      const uniqueBookmakers = Array.from(
+        new Set(result.history?.map((d: OddsDataPoint) => d.bookmaker) || [])
+      ) as string[];
+      setBookmakers(uniqueBookmakers);
     } catch (error) {
       console.error("Failed to fetch odds history:", error);
     } finally {
@@ -72,195 +77,83 @@ export default function OddsMovementChart({
     }
   }
 
-  // Get unique bookmakers
-  const bookmakers = useMemo(() => {
-    const unique = new Set(oddsHistory.map((d) => d.bookmaker));
-    return Array.from(unique).sort();
-  }, [oddsHistory]);
-
   // Process data for chart
-  const chartData = useMemo(() => {
-    if (oddsHistory.length === 0) return [];
+  function processData() {
+    if (data.length === 0) return { points: [], min: 0, max: 0 };
 
-    // Group by timestamp
-    const grouped = new Map<string, Map<string, OddsDataPoint>>();
+    // If "best" bookmaker, aggregate to show best line at each timestamp
+    let chartData: OddsDataPoint[] = data;
 
-    for (const point of oddsHistory) {
-      if (!grouped.has(point.timestamp)) {
-        grouped.set(point.timestamp, new Map());
-      }
-      grouped.get(point.timestamp)!.set(point.bookmaker, point);
+    if (bookmaker === "best") {
+      const timeGroups = new Map<string, OddsDataPoint[]>();
+
+      data.forEach((point) => {
+        const time = new Date(point.timestamp).toISOString().split(":")[0]; // Group by hour
+        if (!timeGroups.has(time)) {
+          timeGroups.set(time, []);
+        }
+        timeGroups.get(time)!.push(point);
+      });
+
+      chartData = Array.from(timeGroups.entries()).map(([time, points]) => {
+        // Find best odds in this time period
+        let best = points[0];
+        points.forEach((p) => {
+          if (market === "MONEYLINE" || market === "SPREAD") {
+            if ((p.homeOdds || 0) > (best.homeOdds || 0)) best = p;
+          } else if (market === "TOTAL") {
+            if ((p.overOdds || 0) > (best.overOdds || 0)) best = p;
+          }
+        });
+        return best;
+      });
     }
 
-    // Convert to chart format
-    const result = Array.from(grouped.entries()).map(([timestamp, bookmakerData]) => {
-      const entry: any = {
-        timestamp,
-        time: new Date(timestamp).toLocaleTimeString("en-US", {
-          hour: "numeric",
-          minute: "2-digit",
-        }),
-      };
-
-      if (viewMode === "best") {
-        // Calculate best line (most favorable odds)
-        let bestHomeOdds: number | null = null;
-        let bestAwayOdds: number | null = null;
-        let bestOverOdds: number | null = null;
-        let bestUnderOdds: number | null = null;
-        let avgLine: number | null = null;
-
-        const lines: number[] = [];
-
-        for (const point of bookmakerData.values()) {
-          if (selectedMarket === "MONEYLINE" || selectedMarket === "SPREAD") {
-            if (point.homeOdds !== null) {
-              bestHomeOdds =
-                bestHomeOdds === null
-                  ? point.homeOdds
-                  : Math.max(bestHomeOdds, point.homeOdds);
-            }
-            if (point.awayOdds !== null) {
-              bestAwayOdds =
-                bestAwayOdds === null
-                  ? point.awayOdds
-                  : Math.max(bestAwayOdds, point.awayOdds);
-            }
-          }
-
-          if (selectedMarket === "TOTAL") {
-            if (point.overOdds !== null) {
-              bestOverOdds =
-                bestOverOdds === null
-                  ? point.overOdds
-                  : Math.max(bestOverOdds, point.overOdds);
-            }
-            if (point.underOdds !== null) {
-              bestUnderOdds =
-                bestUnderOdds === null
-                  ? point.underOdds
-                  : Math.max(bestUnderOdds, point.underOdds);
-            }
-          }
-
-          if (point.line !== null) {
-            lines.push(point.line);
-          }
-        }
-
-        if (lines.length > 0) {
-          avgLine = lines.reduce((a, b) => a + b, 0) / lines.length;
-        }
-
-        entry.homeOdds = bestHomeOdds;
-        entry.awayOdds = bestAwayOdds;
-        entry.overOdds = bestOverOdds;
-        entry.underOdds = bestUnderOdds;
-        entry.line = avgLine;
-      } else {
-        // Show specific bookmaker
-        const data = bookmakerData.get(selectedBookmaker);
-        if (data) {
-          entry.homeOdds = data.homeOdds;
-          entry.awayOdds = data.awayOdds;
-          entry.overOdds = data.overOdds;
-          entry.underOdds = data.underOdds;
-          entry.line = data.line;
-        }
+    // Extract values based on market type
+    const values: number[] = [];
+    chartData.forEach((point) => {
+      if (market === "MONEYLINE" || market === "SPREAD") {
+        if (point.homeOdds) values.push(point.homeOdds);
+        if (point.awayOdds) values.push(point.awayOdds);
+      } else if (market === "TOTAL") {
+        if (point.overOdds) values.push(point.overOdds);
+        if (point.underOdds) values.push(point.underOdds);
       }
-
-      return entry;
     });
 
-    return result.sort(
-      (a, b) =>
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
-  }, [oddsHistory, viewMode, selectedBookmaker, selectedMarket]);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const padding = (max - min) * 0.1 || 10;
 
-  // Custom tooltip
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (!active || !payload || payload.length === 0) return null;
+    return {
+      points: chartData,
+      min: min - padding,
+      max: max + padding,
+    };
+  }
 
-    const data = payload[0].payload;
+  const { points, min, max } = processData();
 
-    return (
-      <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-700 dark:bg-gray-800">
-        <p className="mb-2 text-sm font-medium text-gray-900 dark:text-white">
-          {new Date(data.timestamp).toLocaleString("en-US", {
-            month: "short",
-            day: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-          })}
-        </p>
+  // Convert value to Y coordinate
+  function valueToY(value: number, height: number): number {
+    if (max === min) return height / 2;
+    return height - ((value - min) / (max - min)) * height;
+  }
 
-        {selectedMarket === "MONEYLINE" && (
-          <>
-            {data.awayOdds !== null && (
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                {awayTeam}: <span className="font-mono font-medium">{formatOdds(data.awayOdds)}</span>
-              </p>
-            )}
-            {data.homeOdds !== null && (
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                {homeTeam}: <span className="font-mono font-medium">{formatOdds(data.homeOdds)}</span>
-              </p>
-            )}
-          </>
-        )}
+  // Convert index to X coordinate
+  function indexToX(index: number, width: number): number {
+    if (points.length <= 1) return width / 2;
+    return (index / (points.length - 1)) * width;
+  }
 
-        {selectedMarket === "SPREAD" && (
-          <>
-            {data.line !== null && (
-              <p className="mb-1 text-sm text-gray-700 dark:text-gray-300">
-                Line: <span className="font-mono font-medium">{formatOdds(data.line)}</span>
-              </p>
-            )}
-            {data.awayOdds !== null && (
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                {awayTeam}: <span className="font-mono font-medium">{formatOdds(data.awayOdds)}</span>
-              </p>
-            )}
-            {data.homeOdds !== null && (
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                {homeTeam}: <span className="font-mono font-medium">{formatOdds(data.homeOdds)}</span>
-              </p>
-            )}
-          </>
-        )}
-
-        {selectedMarket === "TOTAL" && (
-          <>
-            {data.line !== null && (
-              <p className="mb-1 text-sm text-gray-700 dark:text-gray-300">
-                Line: <span className="font-mono font-medium">{data.line.toFixed(1)}</span>
-              </p>
-            )}
-            {data.overOdds !== null && (
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                Over: <span className="font-mono font-medium">{formatOdds(data.overOdds)}</span>
-              </p>
-            )}
-            {data.underOdds !== null && (
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                Under: <span className="font-mono font-medium">{formatOdds(data.underOdds)}</span>
-              </p>
-            )}
-          </>
-        )}
-
-        {viewMode === "best" && (
-          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-            Best available line
-          </p>
-        )}
-      </div>
-    );
-  };
-
-  function formatOdds(odds: number) {
-    return odds > 0 ? `+${odds}` : odds.toString();
+  function formatTime(timestamp: string) {
+    const date = new Date(timestamp);
+    return date.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
   }
 
   if (loading) {
@@ -269,29 +162,32 @@ export default function OddsMovementChart({
     );
   }
 
-  if (chartData.length === 0) {
+  if (points.length === 0) {
     return (
       <div className="rounded-lg border border-gray-200 bg-white p-12 text-center dark:border-gray-700 dark:bg-gray-900">
         <p className="text-gray-600 dark:text-gray-400">
-          No odds history available for this game
+          No odds history available for this market
         </p>
       </div>
     );
   }
 
+  const chartWidth = 800;
+  const chartHeight = 300;
+
   return (
     <div className="space-y-4">
       {/* Controls */}
-      <div className="flex flex-wrap gap-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-        {/* Market Selector */}
-        <div className="flex-1 min-w-[150px]">
+      <div className="flex flex-wrap gap-4">
+        {/* Market selector */}
+        <div>
           <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
             Market
           </label>
           <select
-            value={selectedMarket}
-            onChange={(e) => setSelectedMarket(e.target.value as MarketType)}
-            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+            value={market}
+            onChange={(e) => setMarket(e.target.value as MarketType)}
+            className="rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
           >
             <option value="MONEYLINE">Moneyline</option>
             <option value="SPREAD">Spread</option>
@@ -299,168 +195,333 @@ export default function OddsMovementChart({
           </select>
         </div>
 
-        {/* View Mode */}
-        <div className="flex-1 min-w-[150px]">
+        {/* Bookmaker selector */}
+        <div>
           <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            View
+            Bookmaker
           </label>
           <select
-            value={viewMode}
-            onChange={(e) => {
-              setViewMode(e.target.value as ViewMode);
-              if (e.target.value === "bookmaker" && selectedBookmaker === "all") {
-                setSelectedBookmaker(bookmakers[0] || "all");
-              }
-            }}
-            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+            value={bookmaker}
+            onChange={(e) => setBookmaker(e.target.value)}
+            className="rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
           >
             <option value="best">Best Line</option>
-            <option value="bookmaker">Specific Bookmaker</option>
-          </select>
-        </div>
-
-        {/* Bookmaker Selector */}
-        {viewMode === "bookmaker" && (
-          <div className="flex-1 min-w-[150px]">
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Bookmaker
-            </label>
-            <select
-              value={selectedBookmaker}
-              onChange={(e) => setSelectedBookmaker(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-            >
-              {bookmakers.map((bm) => (
-                <option key={bm} value={bm}>
-                  {bm}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* Time Range */}
-        <div className="flex-1 min-w-[150px]">
-          <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Time Range
-          </label>
-          <select
-            value={hours}
-            onChange={(e) => setHours(parseInt(e.target.value))}
-            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-          >
-            <option value="6">Last 6 hours</option>
-            <option value="12">Last 12 hours</option>
-            <option value="24">Last 24 hours</option>
-            <option value="48">Last 48 hours</option>
-            <option value="72">Last 72 hours</option>
+            {bookmakers.map((book) => (
+              <option key={book} value={book}>
+                {book}
+              </option>
+            ))}
           </select>
         </div>
       </div>
 
       {/* Chart */}
       <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-900">
-        <ResponsiveContainer width="100%" height={400}>
-          <LineChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
-            <XAxis
-              dataKey="time"
-              stroke="#6B7280"
-              style={{ fontSize: "12px" }}
-              tick={{ fill: "#6B7280" }}
-            />
-            <YAxis
-              stroke="#6B7280"
-              style={{ fontSize: "12px" }}
-              tick={{ fill: "#6B7280" }}
-              tickFormatter={(value) => (selectedMarket === "TOTAL" ? value.toFixed(1) : formatOdds(value))}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend
-              wrapperStyle={{ fontSize: "12px", paddingTop: "10px" }}
-              iconType="line"
-            />
-
-            {(selectedMarket === "MONEYLINE" || selectedMarket === "SPREAD") && (
-              <>
-                <Line
-                  type="monotone"
-                  dataKey="awayOdds"
-                  stroke="#3B82F6"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  activeDot={{ r: 5 }}
-                  name={awayTeam}
-                  connectNulls
-                />
-                <Line
-                  type="monotone"
-                  dataKey="homeOdds"
-                  stroke="#EF4444"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  activeDot={{ r: 5 }}
-                  name={homeTeam}
-                  connectNulls
-                />
-                {selectedMarket === "SPREAD" && (
-                  <Line
-                    type="monotone"
-                    dataKey="line"
-                    stroke="#10B981"
-                    strokeWidth={2}
-                    strokeDasharray="5 5"
-                    dot={{ r: 3 }}
-                    activeDot={{ r: 5 }}
-                    name="Line"
-                    connectNulls
+        <div className="relative" style={{ height: chartHeight + 60 }}>
+          <svg
+            width="100%"
+            height={chartHeight + 60}
+            viewBox={`0 0 ${chartWidth} ${chartHeight + 60}`}
+            className="overflow-visible"
+            onMouseLeave={() => setHoveredPoint(null)}
+          >
+            {/* Grid lines */}
+            {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+              const y = ratio * chartHeight + 30;
+              const value = max - ratio * (max - min);
+              return (
+                <g key={ratio}>
+                  <line
+                    x1="60"
+                    y1={y}
+                    x2={chartWidth - 20}
+                    y2={y}
+                    stroke="currentColor"
+                    strokeWidth="1"
+                    className="text-gray-200 dark:text-gray-700"
                   />
-                )}
-              </>
-            )}
+                  <text
+                    x="50"
+                    y={y + 4}
+                    textAnchor="end"
+                    className="text-xs text-gray-600 dark:text-gray-400"
+                  >
+                    {formatOdds(Math.round(value))}
+                  </text>
+                </g>
+              );
+            })}
 
-            {selectedMarket === "TOTAL" && (
+            {/* Home/Away lines */}
+            {market !== "TOTAL" && (
               <>
-                <Line
-                  type="monotone"
-                  dataKey="overOdds"
-                  stroke="#F59E0B"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  activeDot={{ r: 5 }}
-                  name="Over"
-                  connectNulls
+                {/* Home line */}
+                <polyline
+                  points={points
+                    .map((point, i) => {
+                      if (!point.homeOdds) return null;
+                      const x = indexToX(i, chartWidth - 80) + 60;
+                      const y = valueToY(point.homeOdds, chartHeight) + 30;
+                      return `${x},${y}`;
+                    })
+                    .filter(Boolean)
+                    .join(" ")}
+                  fill="none"
+                  stroke="#3B82F6"
+                  strokeWidth="2"
                 />
-                <Line
-                  type="monotone"
-                  dataKey="underOdds"
-                  stroke="#8B5CF6"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  activeDot={{ r: 5 }}
-                  name="Under"
-                  connectNulls
-                />
-                <Line
-                  type="monotone"
-                  dataKey="line"
-                  stroke="#10B981"
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
-                  dot={{ r: 3 }}
-                  activeDot={{ r: 5 }}
-                  name="Line"
-                  connectNulls
+
+                {/* Away line */}
+                <polyline
+                  points={points
+                    .map((point, i) => {
+                      if (!point.awayOdds) return null;
+                      const x = indexToX(i, chartWidth - 80) + 60;
+                      const y = valueToY(point.awayOdds, chartHeight) + 30;
+                      return `${x},${y}`;
+                    })
+                    .filter(Boolean)
+                    .join(" ")}
+                  fill="none"
+                  stroke="#EF4444"
+                  strokeWidth="2"
                 />
               </>
             )}
-          </LineChart>
-        </ResponsiveContainer>
 
-        {/* Data Points Count */}
-        <p className="mt-4 text-center text-xs text-gray-500 dark:text-gray-400">
-          Showing {chartData.length} data point{chartData.length !== 1 ? "s" : ""} over last {hours} hours
-        </p>
+            {/* Over/Under lines */}
+            {market === "TOTAL" && (
+              <>
+                {/* Over line */}
+                <polyline
+                  points={points
+                    .map((point, i) => {
+                      if (!point.overOdds) return null;
+                      const x = indexToX(i, chartWidth - 80) + 60;
+                      const y = valueToY(point.overOdds, chartHeight) + 30;
+                      return `${x},${y}`;
+                    })
+                    .filter(Boolean)
+                    .join(" ")}
+                  fill="none"
+                  stroke="#10B981"
+                  strokeWidth="2"
+                />
+
+                {/* Under line */}
+                <polyline
+                  points={points
+                    .map((point, i) => {
+                      if (!point.underOdds) return null;
+                      const x = indexToX(i, chartWidth - 80) + 60;
+                      const y = valueToY(point.underOdds, chartHeight) + 30;
+                      return `${x},${y}`;
+                    })
+                    .filter(Boolean)
+                    .join(" ")}
+                  fill="none"
+                  stroke="#F59E0B"
+                  strokeWidth="2"
+                />
+              </>
+            )}
+
+            {/* Interactive points */}
+            {points.map((point, i) => {
+              const x = indexToX(i, chartWidth - 80) + 60;
+
+              const pointsToRender = [];
+              if (market !== "TOTAL") {
+                if (point.homeOdds) {
+                  pointsToRender.push({
+                    y: valueToY(point.homeOdds, chartHeight) + 30,
+                    color: "#3B82F6",
+                    label: homeTeam,
+                    odds: point.homeOdds,
+                    line: point.line,
+                  });
+                }
+                if (point.awayOdds) {
+                  pointsToRender.push({
+                    y: valueToY(point.awayOdds, chartHeight) + 30,
+                    color: "#EF4444",
+                    label: awayTeam,
+                    odds: point.awayOdds,
+                    line: point.line,
+                  });
+                }
+              } else {
+                if (point.overOdds) {
+                  pointsToRender.push({
+                    y: valueToY(point.overOdds, chartHeight) + 30,
+                    color: "#10B981",
+                    label: "Over",
+                    odds: point.overOdds,
+                    line: point.line,
+                  });
+                }
+                if (point.underOdds) {
+                  pointsToRender.push({
+                    y: valueToY(point.underOdds, chartHeight) + 30,
+                    color: "#F59E0B",
+                    label: "Under",
+                    odds: point.underOdds,
+                    line: point.line,
+                  });
+                }
+              }
+
+              return pointsToRender.map((pt, j) => (
+                <circle
+                  key={`${i}-${j}`}
+                  cx={x}
+                  cy={pt.y}
+                  r="4"
+                  fill={pt.color}
+                  className="cursor-pointer transition-all hover:r-6"
+                  onMouseEnter={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setHoveredPoint({
+                      index: i,
+                      x: rect.left + rect.width / 2,
+                      y: rect.top,
+                    });
+                  }}
+                />
+              ));
+            })}
+
+            {/* Time axis labels */}
+            {[0, Math.floor(points.length / 2), points.length - 1].map((i) => {
+              if (i >= points.length) return null;
+              const x = indexToX(i, chartWidth - 80) + 60;
+              return (
+                <text
+                  key={i}
+                  x={x}
+                  y={chartHeight + 50}
+                  textAnchor="middle"
+                  className="text-xs text-gray-600 dark:text-gray-400"
+                >
+                  {formatTime(points[i].timestamp)}
+                </text>
+              );
+            })}
+          </svg>
+
+          {/* Tooltip */}
+          {hoveredPoint !== null && points[hoveredPoint.index] && (
+            <div
+              className="pointer-events-none fixed z-50 rounded-lg border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+              style={{
+                left: hoveredPoint.x,
+                top: hoveredPoint.y - 100,
+                transform: "translateX(-50%)",
+              }}
+            >
+              <div className="text-xs text-gray-600 dark:text-gray-400">
+                {formatTime(points[hoveredPoint.index].timestamp)}
+              </div>
+              <div className="mt-2 space-y-1">
+                {market !== "TOTAL" ? (
+                  <>
+                    {points[hoveredPoint.index].homeOdds && (
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="h-2 w-2 rounded-full"
+                          style={{ backgroundColor: "#3B82F6" }}
+                        />
+                        <span className="font-medium">{homeTeam}:</span>
+                        <span>
+                          {formatOdds(points[hoveredPoint.index].homeOdds!)}
+                        </span>
+                      </div>
+                    )}
+                    {points[hoveredPoint.index].awayOdds && (
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="h-2 w-2 rounded-full"
+                          style={{ backgroundColor: "#EF4444" }}
+                        />
+                        <span className="font-medium">{awayTeam}:</span>
+                        <span>
+                          {formatOdds(points[hoveredPoint.index].awayOdds!)}
+                        </span>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {points[hoveredPoint.index].overOdds && (
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="h-2 w-2 rounded-full"
+                          style={{ backgroundColor: "#10B981" }}
+                        />
+                        <span className="font-medium">Over:</span>
+                        <span>
+                          {formatOdds(points[hoveredPoint.index].overOdds!)}
+                        </span>
+                      </div>
+                    )}
+                    {points[hoveredPoint.index].underOdds && (
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="h-2 w-2 rounded-full"
+                          style={{ backgroundColor: "#F59E0B" }}
+                        />
+                        <span className="font-medium">Under:</span>
+                        <span>
+                          {formatOdds(points[hoveredPoint.index].underOdds!)}
+                        </span>
+                      </div>
+                    )}
+                  </>
+                )}
+                {points[hoveredPoint.index].line && (
+                  <div className="mt-1 text-xs text-gray-500">
+                    Line: {points[hoveredPoint.index].line}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Legend */}
+        <div className="mt-4 flex flex-wrap gap-4">
+          {market !== "TOTAL" ? (
+            <>
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 rounded-full bg-blue-500" />
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  {homeTeam}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 rounded-full bg-red-500" />
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  {awayTeam}
+                </span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 rounded-full bg-green-500" />
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  Over
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 rounded-full bg-yellow-500" />
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  Under
+                </span>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
