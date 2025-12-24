@@ -1,5 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Sports AI - Prisma Schema
+// Desktop-first NFL + NBA analytics platform
 
 generator client {
   provider = "prisma-client-js"
@@ -10,17 +10,25 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User model for NextAuth
+// ============================================================================
+// User & Authentication
+// ============================================================================
+
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                   String                @id @default(cuid())
+  name                 String?
+  email                String                @unique
+  emailVerified        DateTime?
+  image                String?
+  accounts             Account[]
+  sessions             Session[]
+  picks                UserPick[]
+  alerts               Alert[]
+  responsibleSettings  ResponsibleSettings?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+
+  @@index([email])
 }
 
 model Account {
@@ -36,10 +44,10 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model Session {
@@ -48,6 +56,8 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model VerificationToken {
@@ -58,3 +68,240 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+// ============================================================================
+// Sports Data
+// ============================================================================
+
+model League {
+  id        String   @id @default(cuid())
+  name      String   @unique // "NFL", "NBA"
+  abbr      String   @unique // "NFL", "NBA"
+  active    Boolean  @default(true)
+  teams     Team[]
+  games     Game[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([abbr])
+}
+
+model Team {
+  id           String   @id @default(cuid())
+  leagueId     String
+  league       League   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  name         String   // "Los Angeles Lakers"
+  abbr         String   // "LAL"
+  city         String   // "Los Angeles"
+  logoUrl      String?
+  primaryColor String?
+  active       Boolean  @default(true)
+  homeGames    Game[]   @relation("HomeTeam")
+  awayGames    Game[]   @relation("AwayTeam")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([leagueId, abbr])
+  @@index([leagueId])
+  @@index([abbr])
+}
+
+enum GameStatus {
+  SCHEDULED
+  IN_PROGRESS
+  FINAL
+  POSTPONED
+  CANCELLED
+}
+
+model Game {
+  id            String          @id @default(cuid())
+  leagueId      String
+  league        League          @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  homeTeamId    String
+  homeTeam      Team            @relation("HomeTeam", fields: [homeTeamId], references: [id], onDelete: Cascade)
+  awayTeamId    String
+  awayTeam      Team            @relation("AwayTeam", fields: [awayTeamId], references: [id], onDelete: Cascade)
+  startTime     DateTime
+  status        GameStatus      @default(SCHEDULED)
+  homeScore     Int?
+  awayScore     Int?
+  venue         String?
+  externalId    String?         // ID from external API
+  oddsSnapshots OddsSnapshot[]
+  userPicks     UserPick[]
+  alerts        Alert[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@unique([externalId])
+  @@index([leagueId, startTime]) // For today's slate
+  @@index([startTime, status])   // For filtering by date and status
+  @@index([status])
+}
+
+// ============================================================================
+// Betting Markets & Odds
+// ============================================================================
+
+model Bookmaker {
+  id            String         @id @default(cuid())
+  name          String         @unique // "DraftKings", "FanDuel"
+  displayName   String         // "DraftKings Sportsbook"
+  logoUrl       String?
+  active        Boolean        @default(true)
+  oddsSnapshots OddsSnapshot[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([active])
+}
+
+enum MarketType {
+  MONEYLINE
+  SPREAD
+  TOTAL
+}
+
+model Market {
+  id            String         @id @default(cuid())
+  type          MarketType
+  name          String         // "Moneyline", "Point Spread", "Total Points"
+  description   String?
+  oddsSnapshots OddsSnapshot[]
+  userPicks     UserPick[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@unique([type])
+  @@index([type])
+}
+
+model OddsSnapshot {
+  id          String     @id @default(cuid())
+  gameId      String
+  game        Game       @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  bookmakerId String
+  bookmaker   Bookmaker  @relation(fields: [bookmakerId], references: [id], onDelete: Cascade)
+  marketId    String
+  market      Market     @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  // Odds values
+  homeOdds    Float?     // For moneyline/spread
+  awayOdds    Float?     // For moneyline/spread
+  overOdds    Float?     // For totals
+  underOdds   Float?     // For totals
+  line        Float?     // Spread or total line value
+  timestamp   DateTime   @default(now())
+  createdAt   DateTime   @default(now())
+
+  @@index([gameId, marketId, bookmakerId, timestamp]) // Latest odds per game/market
+  @@index([gameId, timestamp])                        // Odds history by game
+  @@index([timestamp])
+}
+
+// ============================================================================
+// User Picks & Analytics
+// ============================================================================
+
+enum PickSide {
+  HOME
+  AWAY
+  OVER
+  UNDER
+}
+
+enum PickResult {
+  PENDING
+  WIN
+  LOSS
+  PUSH
+  CANCELLED
+}
+
+model UserPick {
+  id         String     @id @default(cuid())
+  userId     String
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gameId     String
+  game       Game       @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  marketId   String
+  market     Market     @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  side       PickSide
+  odds       Float      // American odds (e.g., -110, +150)
+  line       Float?     // Spread or total line value
+  units      Float      @default(1.0) // Simulated bet size
+  result     PickResult @default(PENDING)
+  notes      String?
+  pickedAt   DateTime   @default(now())
+  settledAt  DateTime?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@index([userId, pickedAt])       // User picks list
+  @@index([userId, result])          // Filter by result
+  @@index([gameId])
+  @@index([result])
+}
+
+// ============================================================================
+// Alerts & Notifications
+// ============================================================================
+
+enum AlertType {
+  ODDS_MOVE
+  GAME_START
+}
+
+enum AlertStatus {
+  ACTIVE
+  TRIGGERED
+  CANCELLED
+}
+
+model Alert {
+  id                String      @id @default(cuid())
+  userId            String
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gameId            String?
+  game              Game?       @relation(fields: [gameId], references: [id], onDelete: SetNull)
+  type              AlertType
+  status            AlertStatus @default(ACTIVE)
+  // For ODDS_MOVE alerts
+  oddsThreshold     Float?      // e.g., 10 for 10 point move
+  // For GAME_START alerts
+  minutesBefore     Int?        // e.g., 30 for 30 minutes before
+  triggeredAt       DateTime?
+  message           String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@index([userId, status])
+  @@index([gameId, status])
+  @@index([status])
+}
+
+// ============================================================================
+// Responsible Gaming
+// ============================================================================
+
+model ResponsibleSettings {
+  id                      String    @id @default(cuid())
+  userId                  String    @unique
+  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ageVerified             Boolean   @default(false)
+  ageVerifiedAt           DateTime?
+  // Reminder settings
+  dailyTimeLimit          Int?      // Minutes per day
+  sessionTimeLimit        Int?      // Minutes per session
+  enableBreakReminders    Boolean   @default(true)
+  breakReminderInterval   Int?      // Minutes
+  // Cooldown
+  cooldownUntil           DateTime?
+  cooldownReason          String?
+  // Tracking
+  lastActivityAt          DateTime?
+  sessionStartAt          DateTime?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  @@index([cooldownUntil])
+}
