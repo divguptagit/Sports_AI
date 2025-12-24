@@ -14,8 +14,9 @@ import {
   TableCell,
   TableSkeleton,
 } from "@/components/ui/Table";
-import { ArrowLeft, Plus, Lock } from "lucide-react";
+import { ArrowLeft, Plus, Lock, TrendingUp } from "lucide-react";
 import Link from "next/link";
+import OddsMovementChart from "@/components/charts/OddsMovementChart";
 
 interface Game {
   id: string;
@@ -296,6 +297,23 @@ export default function GamePage() {
               </div>
             )}
           </>
+        )}
+
+        {/* Odds Movement Chart */}
+        {!ageVerificationRequired && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Odds Movement
+              </h2>
+            </div>
+            <OddsMovementChart
+              gameId={gameId}
+              homeTeam={game.homeTeam.abbr}
+              awayTeam={game.awayTeam.abbr}
+            />
+          </div>
         )}
 
         {/* Create Pick Modal */}
