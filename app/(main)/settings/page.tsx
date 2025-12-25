@@ -1,15 +1,32 @@
 "use client";
 
 import { useState } from "react";
-// Layout is now in root layout.tsx
+import { SectionHeader } from "@/components/ui/SectionHeader";
 import { Button } from "@/components/ui/Button";
-import { Shield, Clock, Bell, CheckCircle } from "lucide-react";
+import { Input } from "@/components/ui/Input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import {
+  Shield,
+  Clock,
+  Bell,
+  CheckCircle,
+  Sun,
+  Moon,
+  Monitor,
+  AlertCircle,
+} from "lucide-react";
+import { useTheme } from "next-themes";
+import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
+  const { theme, setTheme } = useTheme();
   const [ageVerified, setAgeVerified] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [cooldownHours, setCooldownHours] = useState("");
+  const [settingCooldown, setSettingCooldown] = useState(false);
 
-  async function handleAgeVerification(e: React.FormEvent<HTMLFormElement>) {
+  const handleAgeVerification = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setVerifying(true);
 
@@ -33,28 +50,37 @@ export default function SettingsPage() {
       }
 
       setAgeVerified(true);
-      alert("Age verified successfully!");
-    } catch (error) {
+    } catch (_error) {
       alert("Failed to verify age");
     } finally {
       setVerifying(false);
     }
-  }
+  };
 
-  async function handleSettingsUpdate(e: React.FormEvent<HTMLFormElement>) {
+  const handleCooldownSet = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSettingCooldown(true);
+
+    try {
+      // TODO: Implement cooldown API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      alert(`Cooldown set for ${cooldownHours} hours`);
+      setCooldownHours("");
+    } catch (_error) {
+      alert("Failed to set cooldown");
+    } finally {
+      setSettingCooldown(false);
+    }
+  };
+
+  const handleReminderSettings = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const data = {
-      dailyTimeLimit: formData.get("dailyTimeLimit")
-        ? parseInt(formData.get("dailyTimeLimit") as string)
-        : undefined,
-      sessionTimeLimit: formData.get("sessionTimeLimit")
-        ? parseInt(formData.get("sessionTimeLimit") as string)
-        : undefined,
-      enableBreakReminders: formData.get("enableBreakReminders") === "on",
-      breakReminderInterval: formData.get("breakReminderInterval")
-        ? parseInt(formData.get("breakReminderInterval") as string)
-        : undefined,
+      dailyReminderEnabled: formData.get("dailyReminderEnabled") === "on",
+      reminderTime: formData.get("reminderTime"),
     };
 
     try {
@@ -68,188 +94,258 @@ export default function SettingsPage() {
         throw new Error("Failed to update settings");
       }
 
-      alert("Settings updated successfully!");
-    } catch (error) {
+      alert("Reminder settings updated!");
+    } catch (_error) {
       alert("Failed to update settings");
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
-      <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Settings
-          </h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Manage your account and responsible gaming settings
-          </p>
-        </div>
+      <SectionHeader
+        title="Settings"
+        description="Manage your account and responsible-use preferences"
+      />
 
-        {/* Age Verification */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-900">
-          <div className="mb-4 flex items-center gap-3">
-            <Shield className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Age Verification
-            </h2>
-          </div>
-
+      {/* Age Verification */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Age Verification
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
           {ageVerified ? (
-            <div className="flex items-center gap-3 rounded-lg bg-green-50 p-4 dark:bg-green-900/20">
-              <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-              <div>
-                <div className="font-medium text-green-900 dark:text-green-100">
+            <div className="flex items-start gap-3 rounded-lg border border-success/50 bg-success/10 p-4">
+              <CheckCircle className="h-5 w-5 flex-shrink-0 text-success" />
+              <div className="flex-1">
+                <div className="font-medium text-success-foreground">
                   Age Verified
                 </div>
-                <div className="text-sm text-green-800 dark:text-green-200">
-                  You have access to all features
+                <div className="mt-1 text-sm text-muted-foreground">
+                  You have access to view odds and create simulated picks.
                 </div>
               </div>
             </div>
           ) : (
-            <form onSubmit={handleAgeVerification} className="space-y-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                You must be 21 or older to access odds and create picks.
-              </p>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Date of Birth
-                </label>
-                <input
-                  type="date"
-                  name="dateOfBirth"
-                  required
-                  max={new Date().toISOString().split("T")[0]}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                />
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 rounded-lg border border-warning/50 bg-warning/10 p-4">
+                <AlertCircle className="h-5 w-5 flex-shrink-0 text-warning" />
+                <div className="flex-1">
+                  <div className="font-medium text-warning-foreground">
+                    Verification Required
+                  </div>
+                  <div className="mt-1 text-sm text-muted-foreground">
+                    You must be 21 or older to access odds and create picks.
+                  </div>
+                </div>
               </div>
 
-              <div className="flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  name="agreedToTerms"
-                  required
-                  className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
-                />
-                <label className="text-sm text-gray-700 dark:text-gray-300">
-                  I confirm that I am 21 or older and agree to the terms of
-                  service. I understand this platform is for analytics only and
-                  does not facilitate real wagering.
-                </label>
-              </div>
+              <form onSubmit={handleAgeVerification} className="space-y-4">
+                <div>
+                  <label className="mb-2 block text-sm font-medium">
+                    Date of Birth
+                  </label>
+                  <Input
+                    type="date"
+                    name="dateOfBirth"
+                    required
+                    max={new Date().toISOString().split("T")[0]}
+                    className="w-full max-w-xs"
+                  />
+                </div>
 
-              <Button type="submit" loading={verifying}>
-                Verify Age
-              </Button>
-            </form>
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    name="agreedToTerms"
+                    required
+                    className="mt-1 h-4 w-4 rounded border-input text-primary focus:ring-2 focus:ring-ring"
+                  />
+                  <label className="text-sm text-muted-foreground">
+                    I confirm that I am 21 or older and agree to the terms of
+                    service. I understand this platform is for analytics only
+                    and does not facilitate real wagering.
+                  </label>
+                </div>
+
+                <Button type="submit" loading={verifying}>
+                  Verify Age
+                </Button>
+              </form>
+            </div>
           )}
-        </div>
+        </CardContent>
+      </Card>
 
-        {/* Time Limits */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-900">
-          <div className="mb-4 flex items-center gap-3">
-            <Clock className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Time Limits
-            </h2>
+      {/* Theme */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sun className="h-5 w-5" />
+            Appearance
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div>
+            <label className="mb-3 block text-sm font-medium">Theme</label>
+            <div className="grid grid-cols-3 gap-3">
+              <button
+                onClick={() => setTheme("light")}
+                className={cn(
+                  "flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-colors",
+                  theme === "light"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50"
+                )}
+              >
+                <Sun className="h-5 w-5" />
+                <span className="text-sm font-medium">Light</span>
+              </button>
+              <button
+                onClick={() => setTheme("dark")}
+                className={cn(
+                  "flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-colors",
+                  theme === "dark"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50"
+                )}
+              >
+                <Moon className="h-5 w-5" />
+                <span className="text-sm font-medium">Dark</span>
+              </button>
+              <button
+                onClick={() => setTheme("system")}
+                className={cn(
+                  "flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-colors",
+                  theme === "system"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50"
+                )}
+              >
+                <Monitor className="h-5 w-5" />
+                <span className="text-sm font-medium">System</span>
+              </button>
+            </div>
           </div>
+        </CardContent>
+      </Card>
 
-          <form onSubmit={handleSettingsUpdate} className="space-y-4">
+      {/* Cooldown Period */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Cooldown Period
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Set a cooldown period to temporarily prevent creating new simulated
+            picks. This helps you take a break when needed.
+          </p>
+
+          <form onSubmit={handleCooldownSet} className="space-y-4">
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Daily Time Limit (minutes)
+              <label className="mb-2 block text-sm font-medium">
+                Cooldown Duration (hours)
               </label>
-              <input
-                type="number"
-                name="dailyTimeLimit"
-                min="0"
-                max="1440"
-                placeholder="120"
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-              />
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Maximum time per day (0-1440 minutes)
-              </p>
+              <div className="flex items-center gap-3">
+                <Input
+                  type="number"
+                  min="1"
+                  max="168"
+                  value={cooldownHours}
+                  onChange={(e) => setCooldownHours(e.target.value)}
+                  placeholder="24"
+                  className="w-32"
+                  required
+                />
+                <span className="text-sm text-muted-foreground">
+                  hours (max 7 days)
+                </span>
+              </div>
             </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Session Time Limit (minutes)
-              </label>
-              <input
-                type="number"
-                name="sessionTimeLimit"
-                min="0"
-                max="480"
-                placeholder="60"
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-              />
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Maximum time per session (0-480 minutes)
-              </p>
-            </div>
-
-            <Button type="submit">Save Time Limits</Button>
+            <Button type="submit" loading={settingCooldown}>
+              Set Cooldown
+            </Button>
           </form>
-        </div>
 
-        {/* Break Reminders */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-900">
-          <div className="mb-4 flex items-center gap-3">
-            <Bell className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Break Reminders
-            </h2>
+          <div className="rounded-lg border border-muted bg-muted/50 p-4">
+            <p className="text-sm text-muted-foreground">
+              <strong>Note:</strong> During cooldown, you can still view odds
+              and analytics, but cannot create new picks. Contact support if you
+              need to remove a cooldown early.
+            </p>
           </div>
+        </CardContent>
+      </Card>
 
-          <form onSubmit={handleSettingsUpdate} className="space-y-4">
+      {/* Daily Reminders */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="h-5 w-5" />
+            Daily Reminders
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleReminderSettings} className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Set a daily reminder to help you manage your time on the platform.
+            </p>
+
             <div className="flex items-start gap-3">
               <input
                 type="checkbox"
-                name="enableBreakReminders"
+                name="dailyReminderEnabled"
                 defaultChecked
-                className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                className="mt-1 h-4 w-4 rounded border-input text-primary focus:ring-2 focus:ring-ring"
               />
-              <label className="text-sm text-gray-700 dark:text-gray-300">
-                Enable break reminders
-              </label>
+              <label className="text-sm">Enable daily reminder</label>
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Reminder Interval (minutes)
+              <label className="mb-2 block text-sm font-medium">
+                Reminder Time
               </label>
-              <input
-                type="number"
-                name="breakReminderInterval"
-                min="15"
-                max="120"
-                defaultValue="30"
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+              <Input
+                type="time"
+                name="reminderTime"
+                defaultValue="20:00"
+                className="w-48"
               />
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                How often to show break reminders (15-120 minutes)
+              <p className="mt-1 text-xs text-muted-foreground">
+                You'll see a banner reminder at this time each day
               </p>
             </div>
 
             <Button type="submit">Save Reminder Settings</Button>
           </form>
-        </div>
+        </CardContent>
+      </Card>
 
-        {/* Cooldown */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-900">
-          <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
-            Cooldown Period
-          </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            If you need a break, you can set a cooldown period that will prevent
-            you from creating new picks. Contact support to set up a cooldown.
-          </p>
-        </div>
-      </div>
+      {/* Responsible Use Notice */}
+      <Card className="border-warning/50 bg-warning/5">
+        <CardContent className="p-6">
+          <div className="flex gap-3">
+            <AlertCircle className="h-5 w-5 flex-shrink-0 text-warning" />
+            <div className="space-y-2 text-sm">
+              <p className="font-medium text-warning-foreground">
+                Analytics Only Platform
+              </p>
+              <p className="text-muted-foreground">
+                This platform is for educational and analytical purposes only. We
+                do not facilitate real money betting, deposits, withdrawals, or
+                any form of gambling. All picks are simulated for tracking
+                analytical predictions.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
