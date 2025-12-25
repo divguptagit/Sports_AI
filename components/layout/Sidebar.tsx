@@ -51,7 +51,7 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden w-64 flex-col border-r bg-background md:flex">
+    <aside className="hidden w-64 flex-col border-r border-border/50 bg-background/50 backdrop-blur-xl md:flex">
       <nav className="flex-1 space-y-1 p-4">
         {navItems.map((item) => {
           const isActive =
@@ -78,9 +78,9 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="border-t p-4">
-        <div className="rounded-lg bg-muted p-3 text-xs">
-          <p className="mb-1 font-semibold">Analytics Only</p>
+      <div className="border-t border-border/50 p-4">
+        <div className="rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 p-3 text-xs ring-1 ring-primary/20">
+          <p className="mb-1 font-semibold text-primary">Analytics Only</p>
           <p className="text-muted-foreground">
             For educational purposes. Not betting advice.
           </p>

@@ -23,14 +23,14 @@ export function TopBar() {
       <div className="container flex h-16 items-center justify-between px-6">
         {/* Left: Logo + League Switcher */}
         <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-lg font-bold text-primary-foreground">
-              S
-            </div>
-            <span className="hidden text-xl font-bold sm:inline-block">
-              Sports AI
-            </span>
-          </Link>
+      <Link href="/" className="flex items-center space-x-2">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent text-lg font-bold text-white shadow-glow-primary">
+          S
+        </div>
+        <span className="hidden bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-xl font-bold text-transparent sm:inline-block">
+          Sports AI
+        </span>
+      </Link>
 
           <div className="hidden items-center gap-2 rounded-lg bg-muted p-1 md:flex">
             <button

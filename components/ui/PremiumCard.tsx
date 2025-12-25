@@ -1,0 +1,99 @@
+"use client";
+
+import * as React from "react";
+import { cn } from "@/lib/utils";
+
+const PremiumCard = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> & {
+    variant?: "default" | "glass" | "gradient" | "bordered";
+    hover?: boolean;
+  }
+>(({ className, variant = "default", hover = true, ...props }, ref) => {
+  const variants = {
+    default: "bg-card border border-border",
+    glass: "glass-card",
+    gradient: "border-gradient bg-card",
+    bordered: "bg-card border-2 border-primary/20",
+  };
+
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        "rounded-2xl shadow-soft transition-all duration-200",
+        variants[variant],
+        hover && "card-hover cursor-pointer",
+        className
+      )}
+      {...props}
+    />
+  );
+});
+PremiumCard.displayName = "PremiumCard";
+
+const PremiumCardHeader = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("flex flex-col space-y-1.5 p-6", className)}
+    {...props}
+  />
+));
+PremiumCardHeader.displayName = "PremiumCardHeader";
+
+const PremiumCardTitle = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLHeadingElement>
+>(({ className, ...props }, ref) => (
+  <h3
+    ref={ref}
+    className={cn("text-xl font-bold tracking-tight", className)}
+    {...props}
+  />
+));
+PremiumCardTitle.displayName = "PremiumCardTitle";
+
+const PremiumCardDescription = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => (
+  <p
+    ref={ref}
+    className={cn("text-sm text-muted-foreground", className)}
+    {...props}
+  />
+));
+PremiumCardDescription.displayName = "PremiumCardDescription";
+
+const PremiumCardContent = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+));
+PremiumCardContent.displayName = "PremiumCardContent";
+
+const PremiumCardFooter = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("flex items-center p-6 pt-0", className)}
+    {...props}
+  />
+));
+PremiumCardFooter.displayName = "PremiumCardFooter";
+
+export {
+  PremiumCard,
+  PremiumCardHeader,
+  PremiumCardFooter,
+  PremiumCardTitle,
+  PremiumCardDescription,
+  PremiumCardContent,
+};
+
