@@ -32,7 +32,7 @@ import { CreatePickSchema, GetPicksQuerySchema } from "@/lib/api/validation";
 export async function POST(request: NextRequest) {
   try {
     // Require authentication
-    const user = await requireAuth();
+    const user = (await requireAuth()) as any;
 
     // Check rate limit (5 picks per minute)
     const rateLimit = checkRateLimit(`picks:${user.id}`, rateLimits.strict);
@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     // Require authentication
-    const user = await requireAuth();
+    const user = (await requireAuth()) as any;
 
     const { searchParams } = new URL(request.url);
     const query = GetPicksQuerySchema.parse({

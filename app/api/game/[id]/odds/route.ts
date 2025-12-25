@@ -48,7 +48,7 @@ export async function GET(
   const params = await context.params;
   try {
     // Require authentication and age verification
-    const user = await requireAuth();
+    const user = (await requireAuth()) as any;
     await requireAgeVerification(user.id);
 
     const { searchParams } = new URL(request.url);

@@ -11,11 +11,11 @@ import { errors } from "./errors";
 export async function requireAuth() {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user?.id) {
+  if (!session?.user) {
     throw errors.unauthorized("Authentication required");
   }
 
-  return session.user;
+  return session.user as any;
 }
 
 /**
