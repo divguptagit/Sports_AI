@@ -128,9 +128,30 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Focus visible styles for accessibility */
+*:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+  
+  /* Subtle gradient backgrounds */
+  .gradient-header {
+    background: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.3) 100%);
+  }
+  
+  /* Better shadows */
+  .shadow-soft {
+    box-shadow: 0 2px 8px -2px hsl(var(--foreground) / 0.1);
+  }
+  
+  .shadow-soft-lg {
+    box-shadow: 0 4px 16px -4px hsl(var(--foreground) / 0.1);
   }
 }
 

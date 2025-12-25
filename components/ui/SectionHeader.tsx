@@ -16,7 +16,9 @@ export function SectionHeader({
   return (
     <div className={cn("flex items-center justify-between", className)}>
       <div className="space-y-1">
-        <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
+        <h2 className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-2xl font-semibold tracking-tight text-transparent">
+          {title}
+        </h2>
         {description && (
           <p className="text-sm text-muted-foreground">{description}</p>
         )}
