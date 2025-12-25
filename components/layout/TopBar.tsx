@@ -23,38 +23,19 @@ export function TopBar() {
       <div className="container flex h-16 items-center justify-between px-6">
         {/* Left: Logo + League Switcher */}
         <div className="flex items-center gap-6">
-      <Link href="/" className="flex items-center space-x-2">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent text-lg font-bold text-white shadow-glow-primary">
-          S
-        </div>
-        <span className="hidden bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-xl font-bold text-transparent sm:inline-block">
-          Sports AI
-        </span>
-      </Link>
+          <Link href="/" className="flex items-center space-x-2">
+            <div className="shadow-glow-primary flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent text-lg font-bold text-white">
+              S
+            </div>
+            <span className="hidden bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-xl font-bold text-transparent sm:inline-block">
+              Sports AI
+            </span>
+          </Link>
 
-          <div className="hidden items-center gap-2 rounded-lg bg-muted p-1 md:flex">
-            <button
-              onClick={() => setSelectedLeague("NFL")}
-              className={cn(
-                "rounded-md px-4 py-1.5 text-sm font-medium transition-colors",
-                selectedLeague === "NFL"
-                  ? "bg-background shadow-sm"
-                  : "hover:bg-background/50"
-              )}
-            >
-              NFL
-            </button>
-            <button
-              onClick={() => setSelectedLeague("NBA")}
-              className={cn(
-                "rounded-md px-4 py-1.5 text-sm font-medium transition-colors",
-                selectedLeague === "NBA"
-                  ? "bg-background shadow-sm"
-                  : "hover:bg-background/50"
-              )}
-            >
-              NBA
-            </button>
+          {/* NBA Badge */}
+          <div className="hidden items-center gap-2 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 px-4 py-2 ring-1 ring-primary/20 md:flex">
+            <span className="text-sm font-bold text-primary">NBA</span>
+            <span className="text-xs text-muted-foreground">Analytics</span>
           </div>
         </div>
 

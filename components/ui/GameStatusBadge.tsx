@@ -63,4 +63,3 @@ export function GameStatusBadge({ status, className }: GameStatusBadgeProps) {
     </Badge>
   );
 }
-

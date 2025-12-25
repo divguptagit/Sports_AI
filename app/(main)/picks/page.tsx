@@ -49,7 +49,7 @@ export default function PicksPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Filters
-  const [league, setLeague] = useState("all");
+  const [league, setLeague] = useState("NBA");
   const [dateRange, setDateRange] = useState("30d");
   const [market, setMarket] = useState("all");
   const [status, setStatus] = useState("all");
@@ -90,8 +90,12 @@ export default function PicksPage() {
           edge: 3.2,
           notes: "Strong home advantage",
           impliedProbability: 60,
-          createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          settledAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+          createdAt: new Date(
+            Date.now() - 2 * 24 * 60 * 60 * 1000
+          ).toISOString(),
+          settledAt: new Date(
+            Date.now() - 1 * 24 * 60 * 60 * 1000
+          ).toISOString(),
           profit: 1.0,
         },
         {
@@ -110,8 +114,12 @@ export default function PicksPage() {
           edge: -1.5,
           notes: "Injury to key player",
           impliedProbability: 52.4,
-          createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-          settledAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+          createdAt: new Date(
+            Date.now() - 5 * 24 * 60 * 60 * 1000
+          ).toISOString(),
+          settledAt: new Date(
+            Date.now() - 4 * 24 * 60 * 60 * 1000
+          ).toISOString(),
           profit: -2.0,
         },
         {
@@ -130,7 +138,9 @@ export default function PicksPage() {
           edge: 2.1,
           notes: "High-scoring offenses",
           impliedProbability: 51.2,
-          createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+          createdAt: new Date(
+            Date.now() - 1 * 24 * 60 * 60 * 1000
+          ).toISOString(),
         },
       ];
 
@@ -145,13 +155,20 @@ export default function PicksPage() {
 
   // Calculate KPI stats
   const stats = useMemo(() => {
-    const settledPicks = picks.filter((p) => p.result && p.result !== "PENDING");
+    const settledPicks = picks.filter(
+      (p) => p.result && p.result !== "PENDING"
+    );
     const wonPicks = picks.filter((p) => p.result === "WON");
-    const totalUnits = settledPicks.reduce((sum, p) => sum + (p.profit || 0), 0);
+    const totalUnits = settledPicks.reduce(
+      (sum, p) => sum + (p.profit || 0),
+      0
+    );
     const totalRisked = settledPicks.reduce((sum, p) => sum + p.units, 0);
     const roi = totalRisked > 0 ? (totalUnits / totalRisked) * 100 : 0;
     const winRate =
-      settledPicks.length > 0 ? (wonPicks.length / settledPicks.length) * 100 : 0;
+      settledPicks.length > 0
+        ? (wonPicks.length / settledPicks.length) * 100
+        : 0;
     const avgEdge =
       picks.length > 0
         ? picks.reduce((sum, p) => sum + (p.edge || 0), 0) / picks.length
@@ -185,9 +202,8 @@ export default function PicksPage() {
   const filteredPicks = useMemo(() => {
     let filtered = picks;
 
-    if (league !== "all") {
-      filtered = filtered.filter((p) => p.game.league === league);
-    }
+    // Always filter to NBA only
+    filtered = filtered.filter((p) => p.game.league === "NBA");
 
     if (market !== "all") {
       filtered = filtered.filter((p) => p.market === market);
@@ -408,7 +424,7 @@ export default function PicksPage() {
           message="Start tracking your analytical predictions by creating picks from the Slate or Game pages."
           action={{
             label: "View Today's Slate",
-            onClick: () => (window.location.href = "/"),
+            onClick: () => (window.location.href = "/slate"),
           }}
         />
       ) : sortedPicks.length === 0 ? (

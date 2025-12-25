@@ -337,9 +337,9 @@ export default function SettingsPage() {
                 Analytics Only Platform
               </p>
               <p className="text-muted-foreground">
-                This platform is for educational and analytical purposes only. We
-                do not facilitate real money betting, deposits, withdrawals, or
-                any form of gambling. All picks are simulated for tracking
+                This platform is for educational and analytical purposes only.
+                We do not facilitate real money betting, deposits, withdrawals,
+                or any form of gambling. All picks are simulated for tracking
                 analytical predictions.
               </p>
             </div>

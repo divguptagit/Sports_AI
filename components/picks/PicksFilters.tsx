@@ -36,44 +36,9 @@ export function PicksFilters({
     <div className="space-y-4 rounded-lg border bg-card p-6 shadow-sm">
       {/* Top Row: League & Date Range */}
       <div className="flex flex-wrap items-center gap-4">
-        {/* League Filter */}
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-medium">League:</label>
-          <div className="flex items-center gap-1 rounded-lg bg-muted p-1">
-            <button
-              onClick={() => onLeagueChange("all")}
-              className={cn(
-                "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-                league === "all"
-                  ? "bg-background shadow-sm"
-                  : "text-muted-foreground hover:bg-background/50"
-              )}
-            >
-              All
-            </button>
-            <button
-              onClick={() => onLeagueChange("NFL")}
-              className={cn(
-                "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-                league === "NFL"
-                  ? "bg-background shadow-sm"
-                  : "text-muted-foreground hover:bg-background/50"
-              )}
-            >
-              NFL
-            </button>
-            <button
-              onClick={() => onLeagueChange("NBA")}
-              className={cn(
-                "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-                league === "NBA"
-                  ? "bg-background shadow-sm"
-                  : "text-muted-foreground hover:bg-background/50"
-              )}
-            >
-              NBA
-            </button>
-          </div>
+        {/* NBA Badge */}
+        <div className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 px-4 py-2 ring-1 ring-primary/20">
+          <span className="text-sm font-bold text-primary">NBA</span>
         </div>
 
         {/* Date Range Filter */}

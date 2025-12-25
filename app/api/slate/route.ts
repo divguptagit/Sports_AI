@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
         awayTeam: { select: { id: true, name: true, abbr: true, city: true } },
       },
       orderBy: { startTime: "asc" },
-    });
+    }).catch(() => []);
 
     return NextResponse.json({
       games: games.map((game) => ({

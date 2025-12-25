@@ -21,7 +21,7 @@ const PremiumCard = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "rounded-2xl shadow-soft transition-all duration-200",
+        "shadow-soft rounded-2xl transition-all duration-200",
         variants[variant],
         hover && "card-hover cursor-pointer",
         className
@@ -96,4 +96,3 @@ export {
   PremiumCardDescription,
   PremiumCardContent,
 };
-

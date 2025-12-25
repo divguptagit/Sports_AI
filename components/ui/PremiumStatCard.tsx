@@ -55,7 +55,7 @@ export function PremiumStatCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
       className={cn(
-        "group relative overflow-hidden rounded-2xl border p-6 transition-all duration-200 hover:shadow-soft-lg",
+        "hover:shadow-soft-lg group relative overflow-hidden rounded-2xl border p-6 transition-all duration-200",
         config.bg,
         config.border
       )}
@@ -98,9 +98,7 @@ export function PremiumStatCard({
               <span className="text-danger">↓ {Math.abs(change.value)}%</span>
             )}
             {trend === "neutral" && (
-              <span className="text-muted-foreground">
-                → {change.value}%
-              </span>
+              <span className="text-muted-foreground">→ {change.value}%</span>
             )}
             {change.label && (
               <span className="text-muted-foreground">{change.label}</span>
@@ -111,4 +109,3 @@ export function PremiumStatCard({
     </motion.div>
   );
 }
-

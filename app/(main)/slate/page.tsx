@@ -47,7 +47,7 @@ export default function SlatePage() {
   const [error, setError] = useState<string | null>(null);
 
   // Filters
-  const [selectedLeague, setSelectedLeague] = useState<string>("all");
+  const [selectedLeague, setSelectedLeague] = useState<string>("NBA");
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split("T")[0]
   );
@@ -72,7 +72,7 @@ export default function SlatePage() {
     setError(null);
     try {
       const params = new URLSearchParams();
-      if (selectedLeague !== "all") params.set("league", selectedLeague);
+      params.set("league", "NBA");
       params.set("date", selectedDate);
 
       const response = await fetch(`/api/slate?${params.toString()}`);

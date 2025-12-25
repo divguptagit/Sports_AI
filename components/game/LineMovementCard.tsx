@@ -46,7 +46,7 @@ export function LineMovementCard({ gameId, market }: LineMovementCardProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-64 flex items-center justify-center text-sm text-muted-foreground">
+        <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
           Line movement chart will display odds history over time
         </div>
       </CardContent>

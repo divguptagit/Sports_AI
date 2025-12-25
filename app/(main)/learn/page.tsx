@@ -148,9 +148,9 @@ export default function LearnPage() {
                 Analytics Only - No Real Wagering
               </h3>
               <p className="text-sm text-muted-foreground">
-                This platform is for educational and analytical purposes only. We
-                do not facilitate real money betting, deposits, withdrawals, or
-                any form of gambling. All picks are simulated for tracking
+                This platform is for educational and analytical purposes only.
+                We do not facilitate real money betting, deposits, withdrawals,
+                or any form of gambling. All picks are simulated for tracking
                 analytical predictions.
               </p>
             </div>
@@ -275,8 +275,8 @@ export default function LearnPage() {
             <p className="text-sm text-muted-foreground">
               <strong>Disclaimer:</strong> The information provided on this
               platform is for educational purposes only and should not be
-              considered financial or betting advice. Always do your own research
-              and make informed decisions.
+              considered financial or betting advice. Always do your own
+              research and make informed decisions.
             </p>
           </div>
         </CardContent>

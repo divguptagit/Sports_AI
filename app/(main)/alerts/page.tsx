@@ -204,10 +204,7 @@ export default function AlertsPage() {
             return (
               <Card
                 key={alert.id}
-                className={cn(
-                  "transition-all",
-                  !alert.enabled && "opacity-60"
-                )}
+                className={cn("transition-all", !alert.enabled && "opacity-60")}
               >
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
@@ -244,11 +241,13 @@ export default function AlertsPage() {
                         </p>
                         <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
                           <span>
-                            Last triggered: {formatLastTriggered(alert.lastTriggered)}
+                            Last triggered:{" "}
+                            {formatLastTriggered(alert.lastTriggered)}
                           </span>
                           <span>•</span>
                           <span>
-                            Created {new Date(alert.createdAt).toLocaleDateString()}
+                            Created{" "}
+                            {new Date(alert.createdAt).toLocaleDateString()}
                           </span>
                         </div>
                       </div>

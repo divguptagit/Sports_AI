@@ -5,7 +5,15 @@ import { cn } from "@/lib/utils";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children?: ReactNode;
-  variant?: "primary" | "secondary" | "outline" | "danger" | "default" | "destructive" | "ghost" | "link";
+  variant?:
+    | "primary"
+    | "secondary"
+    | "outline"
+    | "danger"
+    | "default"
+    | "destructive"
+    | "ghost"
+    | "link";
   size?: "sm" | "md" | "lg" | "icon" | "default";
   loading?: boolean;
   isLoading?: boolean;
@@ -22,14 +30,18 @@ export function Button({
   ...props
 }: ButtonProps) {
   // Map new variants to old ones for compatibility
-  const mappedVariant = variant === "default" ? "primary" : variant === "destructive" ? "danger" : variant;
+  const mappedVariant =
+    variant === "default"
+      ? "primary"
+      : variant === "destructive"
+        ? "danger"
+        : variant;
   const isButtonLoading = loading || isLoading;
-  
+
   const variantClasses = {
     primary:
       "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow",
-    secondary:
-      "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+    secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
     outline:
       "border-2 border-input text-foreground hover:bg-accent hover:text-accent-foreground",
     danger:
@@ -49,8 +61,9 @@ export function Button({
   return (
     <button
       className={cn(
-        "rounded-lg font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 inline-flex items-center justify-center",
-        variantClasses[mappedVariant as keyof typeof variantClasses] || variantClasses.primary,
+        "inline-flex items-center justify-center rounded-lg font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        variantClasses[mappedVariant as keyof typeof variantClasses] ||
+          variantClasses.primary,
         sizeClasses[mappedSize as keyof typeof sizeClasses],
         className
       )}

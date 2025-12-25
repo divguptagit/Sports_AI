@@ -242,7 +242,7 @@ export default function GamePage() {
     <div className="space-y-6">
       {/* Back Button */}
       <Link
-        href="/"
+        href="/slate"
         className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />

@@ -56,25 +56,12 @@ export function SlateFilters({
     <div className="space-y-4 rounded-lg border bg-card p-6 shadow-sm">
       {/* Top Row: League + Date + Live Toggle */}
       <div className="flex flex-wrap items-center gap-4">
-        {/* League Selector */}
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <div className="flex items-center gap-1 rounded-lg bg-muted p-1">
-            {leagues.map((league) => (
-              <button
-                key={league.value}
-                onClick={() => onLeagueChange(league.value)}
-                className={cn(
-                  "rounded-md px-4 py-1.5 text-sm font-medium transition-colors",
-                  selectedLeague === league.value
-                    ? "bg-background shadow-sm"
-                    : "hover:bg-background/50"
-                )}
-              >
-                {league.label}
-              </button>
-            ))}
-          </div>
+        {/* NBA Badge */}
+        <div className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 px-4 py-2 ring-1 ring-primary/20">
+          <span className="text-sm font-bold text-primary">NBA</span>
+          <span className="text-xs text-muted-foreground">
+            Today&apos;s Games
+          </span>
         </div>
 
         {/* Date Picker */}

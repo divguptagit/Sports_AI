@@ -6,4 +6,3 @@ export function KeyboardShortcuts() {
   useKeyboardShortcuts();
   return null;
 }
-

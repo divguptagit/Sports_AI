@@ -30,7 +30,8 @@ const badgeVariants = cva(
 );
 
 export interface PremiumBadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
+  extends
+    React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof badgeVariants> {
   pulse?: boolean;
 }
@@ -56,4 +57,3 @@ function PremiumBadge({
 }
 
 export { PremiumBadge, badgeVariants };
-

@@ -32,7 +32,7 @@ export function useKeyboardShortcuts() {
       if (event.key === "g") {
         const handleNextKey = (nextEvent: KeyboardEvent) => {
           if (nextEvent.key === "s") {
-            router.push("/");
+            router.push("/slate");
           } else if (nextEvent.key === "p") {
             router.push("/picks");
           } else if (nextEvent.key === "a") {
